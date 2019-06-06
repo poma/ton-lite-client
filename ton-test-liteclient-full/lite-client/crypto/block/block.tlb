@@ -446,8 +446,8 @@ bt_fork$1 {X:Type} left:^(BinTree X) right:^(BinTree X)
           = BinTree X;
 
 fsm_none$0 = FutureSplitMerge;
-fsm_split$10 split_utime:uint32 = FutureSplitMerge;
-fsm_merge$11 merge_utime:uint32 = FutureSplitMerge;
+fsm_split$10 split_utime:uint32 interval:uint32 = FutureSplitMerge;
+fsm_merge$11 merge_utime:uint32 interval:uint32 = FutureSplitMerge;
 
 shard_descr$_ seq_no:uint32 start_lt:uint64 end_lt:uint64
   root_hash:bits256 file_hash:bits256 
@@ -522,8 +522,10 @@ wfmt_ext#0 min_addr_len:(## 12) max_addr_len:(## 12) addr_len_step:(## 12)
   workchain_type_id:(## 32) { workchain_type_id >= 1 }
   = WorkchainFormat 0;
 
-workchain#a5 enabled_since:uint32 min_split:(## 8) max_split:(## 8)
-  { min_split <= max_split } { max_split <= 60 }
+workchain#a6 enabled_since:uint32 actual_min_split:(## 8) 
+  min_split:(## 8) max_split:(## 8) { actual_min_split <= min_split }
+//workchain#a5 enabled_since:uint32 min_split:(## 8) max_split:(## 8)
+//  { min_split <= max_split } { max_split <= 60 }
   basic:(## 1) active:Bool accept_msgs:Bool flags:(## 13) { flags = 0 }
   zerostate_root_hash:bits256 zerostate_file_hash:bits256
   version:uint32 format:(WorkchainFormat basic)

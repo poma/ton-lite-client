@@ -13,6 +13,8 @@ typedef std::function<bool(CellBuilder&)> store_value_func_t;
 
 struct CombineError {};  // thrown by Dictionary::combine_with
 
+struct DictNonEmpty {};
+
 class DictionaryBase {
  protected:
   mutable Ref<CellSlice> root;
@@ -29,6 +31,8 @@ class DictionaryBase {
   DictionaryBase(const CellSlice& root_cs, int _n, bool validate = true);
   DictionaryBase(CellSlice& root_cs, int _n, bool validate = true, bool skip = false);
   DictionaryBase(Ref<Cell> cell, int _n, bool validate = true);
+  DictionaryBase(DictNonEmpty, Ref<CellSlice> _root, int _n, bool validate = true);
+  DictionaryBase(DictNonEmpty, const CellSlice& root_cs, int _n, bool validate = true);
   static Ref<Cell> construct_root_from(const CellSlice& root_node_cs);
   Ref<CellSlice> get_root() const;
   Ref<CellSlice> extract_root() &&;
@@ -59,6 +63,7 @@ class DictionaryBase {
   static Ref<CellSlice> get_empty_dictionary();
 
  protected:
+  bool init_root_for_nonempty(const CellSlice& cs);
   bool invalidate() {
     flags |= f_invalid;
     return false;
@@ -232,6 +237,7 @@ class AugmentedDictionary : public DictionaryBase {
   AugmentedDictionary(int _n, const AugmentationData& _aug, bool validate = true);
   AugmentedDictionary(Ref<CellSlice> _root, int _n, const AugmentationData& _aug, bool validate = true);
   AugmentedDictionary(Ref<Cell> cell, int _n, const AugmentationData& _aug, bool validate = true);
+  AugmentedDictionary(DictNonEmpty, Ref<CellSlice> _root, int _n, const AugmentationData& _aug, bool validate = true);
   Ref<CellSlice> get_empty_dictionary() const;
   Ref<CellSlice> get_root() const;
   Ref<CellSlice> extract_root() &&;

@@ -371,7 +371,7 @@ int exec_dict_getmin(VmState* st, unsigned args) {
   }
   if (args & 4) {
     td::RefInt256 x{true};
-    x.unique_write()->import_bits(td::ConstBitPtr{buffer}, n, !(args & 2));
+    x.unique_write().import_bits(td::ConstBitPtr{buffer}, n, !(args & 2));
     stack.push_int(std::move(x));
   } else {
     stack.push_cellslice(Ref<CellSlice>{true, CellBuilder().store_bits(td::ConstBitPtr{buffer}, n).finalize()});
@@ -415,7 +415,7 @@ int exec_dict_getnear(VmState* st, unsigned args) {
   } else {
     auto key = stack.pop_int_finite();
     Ref<CellSlice> res;
-    if ((*key)->export_bits(td::BitPtr{buffer}, n, sgnd)) {
+    if (key->export_bits(td::BitPtr{buffer}, n, sgnd)) {
       res = dict.lookup_nearest_key(buffer, n, go_up, allow_eq, sgnd);
     } else if ((td::sgn(key) >= 0) ^ go_up) {
       res = dict.get_minmax_key(buffer, n, !go_up, sgnd);
@@ -425,7 +425,7 @@ int exec_dict_getnear(VmState* st, unsigned args) {
       return 0;
     }
     stack.push_cellslice(std::move(res));
-    key.write()->import_bits(td::ConstBitPtr{buffer}, n, sgnd);
+    key.write().import_bits(td::ConstBitPtr{buffer}, n, sgnd);
     stack.push_int(std::move(key));
   }
   stack.push_bool(true);

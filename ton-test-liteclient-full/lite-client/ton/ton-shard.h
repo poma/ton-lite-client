@@ -32,6 +32,10 @@ inline td::uint32 shard_prefix_length(ShardId shard) {
   return shard ? 63 - td::count_trailing_zeroes_non_zero64(shard) : 0;
 }
 
+inline td::uint32 shard_prefix_length(ShardIdFull shard) {
+  return shard_prefix_length(shard.shard);
+}
+
 inline bool shard_is_ancestor(ShardId parent, ShardId child) {
   td::uint64 x = td::lower_bit64(parent), y = td::lower_bit64(child);
   return x >= y && !((parent ^ child) & (td::bits_negate64(x) << 1));

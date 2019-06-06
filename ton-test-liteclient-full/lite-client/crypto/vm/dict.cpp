@@ -68,6 +68,31 @@ DictionaryBase::DictionaryBase(int _n, bool validate) : root(), root_cell(), key
   }
 }
 
+DictionaryBase::DictionaryBase(DictNonEmpty, Ref<CellSlice> _root, int _n, bool validate)
+    : root(), root_cell(), key_bits(_n), flags(0) {
+  if (_root.is_null() || !init_root_for_nonempty(*_root)) {  // empty ?
+    invalidate();                                            // invalidate
+  }
+  if (validate) {
+    force_validate();
+  }
+}
+
+DictionaryBase::DictionaryBase(DictNonEmpty, const CellSlice& _root, int _n, bool validate)
+    : root(), root_cell(), key_bits(_n), flags(0) {
+  if (!init_root_for_nonempty(_root)) {
+    invalidate();
+  }
+  if (validate) {
+    force_validate();
+  }
+}
+
+bool DictionaryBase::init_root_for_nonempty(const CellSlice& cs) {
+  vm::CellBuilder cb;
+  return cb.append_cellslice_bool(cs) && cb.finalize_to(root_cell);
+}
+
 Ref<Cell> DictionaryBase::construct_root_from(const CellSlice& root_node_cs) {
   vm::CellBuilder cb;
   if (cb.append_cellslice_bool(root_node_cs)) {
@@ -333,14 +358,14 @@ int LabelParser::extract_label_to(td::BitPtr to) {
 using dict::LabelParser;
 
 BitSlice Dictionary::integer_key(td::RefInt256 x, unsigned n, bool sgnd, unsigned char buffer[128], bool quiet) {
-  if (x.not_null() && (*x)->fits_bits(n, sgnd)) {
+  if (x.not_null() && x->fits_bits(n, sgnd)) {
     if (buffer) {
-      if ((*x)->export_bits(buffer, 0, n, sgnd)) {
+      if (x->export_bits(buffer, 0, n, sgnd)) {
         return BitSlice{{}, buffer, 0, n};
       }
     } else {
       Ref<td::BitString> bs{true, n};
-      if ((*x)->export_bits(bs.unique_write().reserve_bitslice(n), sgnd)) {
+      if (x->export_bits(bs.unique_write().reserve_bitslice(n), sgnd)) {
         return static_cast<BitSlice>(*bs);
       }
     }
@@ -352,7 +377,7 @@ BitSlice Dictionary::integer_key(td::RefInt256 x, unsigned n, bool sgnd, unsigne
 }
 
 bool Dictionary::integer_key_simple(td::RefInt256 x, unsigned n, bool sgnd, td::BitPtr buffer, bool quiet) {
-  if (x.not_null() && (*x)->fits_bits(n, sgnd) && (*x)->export_bits(buffer, n, sgnd)) {
+  if (x.not_null() && x->fits_bits(n, sgnd) && x->export_bits(buffer, n, sgnd)) {
     return true;
   }
   if (!quiet) {
@@ -1629,6 +1654,14 @@ AugmentedDictionary::AugmentedDictionary(Ref<CellSlice> _root, int _n, const Aug
 
 AugmentedDictionary::AugmentedDictionary(Ref<Cell> cell, int _n, const AugmentationData& _aug, bool validate)
     : DictionaryBase(std::move(cell), _n, false), aug(_aug) {
+  if (validate) {
+    force_validate();
+  }
+}
+
+AugmentedDictionary::AugmentedDictionary(DictNonEmpty, Ref<CellSlice> _root, int _n, const AugmentationData& _aug,
+                                         bool validate)
+    : DictionaryBase(DictNonEmpty{}, std::move(_root), _n, false), aug(_aug) {
   if (validate) {
     force_validate();
   }

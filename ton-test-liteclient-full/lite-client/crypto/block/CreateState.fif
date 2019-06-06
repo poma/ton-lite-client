@@ -54,8 +54,8 @@ dictnew 0 2constant validator-dict
 } : config.validators!
 
 dictnew constant workchain-dict
-// root-hash file-hash enable-utime min-split max-split workchain-id --
-{ <b x{a5} s, 4 roll 32 u, 3 roll 8 u, rot 8 u, x{e000} s,
+// root-hash file-hash enable-utime actual-min-split min-split max-split workchain-id --
+{ <b x{a6} s, 5 roll 32 u, 4 roll 8 u, 3 roll 8 u, rot 8 u, x{e000} s,
   3 roll 256 u, rot 256 u, 0 32 u, x{1} s, -1 32 i, 0 64 u, b>
   dup isWorkchainDescr? not abort"invalid WorkchainDescr created"
   <s swap @' workchain-dict 32 idict!+ 0= abort"cannot add workchain"

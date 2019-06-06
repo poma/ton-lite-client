@@ -39,11 +39,13 @@ struct StdAddress {
   bool rdeserialize(td::Slice from);
   bool rdeserialize(std::string from);
   bool rdeserialize(const char from[48]);
-  bool parse_addr(std::string acc_string);
+  bool parse_addr(td::Slice acc_string);
   bool operator==(const StdAddress& other) const;
+
+  static td::Result<StdAddress> parse(td::Slice acc_string);
 };
 
-bool parse_std_account_addr(std::string acc_string, ton::WorkchainId& wc, ton::StdSmcAddress& addr,
+bool parse_std_account_addr(td::Slice acc_string, ton::WorkchainId& wc, ton::StdSmcAddress& addr,
                             bool* bounceable = nullptr, bool* testnet_only = nullptr);
 
 struct ShardId {
@@ -122,12 +124,12 @@ struct MsgProcessedUpto {
   MsgProcessedUpto(ton::ShardId _shard, ton::BlockSeqno _mcseqno, ton::LogicalTime _lt, td::ConstBitPtr _hash)
       : shard(_shard), mc_seqno(_mcseqno), last_inmsg_lt(_lt), last_inmsg_hash(_hash) {
   }
-  bool operator<(const MsgProcessedUpto& other) const & {
+  bool operator<(const MsgProcessedUpto& other) const& {
     return shard < other.shard || (shard == other.shard && mc_seqno < other.mc_seqno);
   }
-  bool contains(const MsgProcessedUpto& other) const &;
+  bool contains(const MsgProcessedUpto& other) const&;
   bool contains(ton::ShardId other_shard, ton::LogicalTime other_lt, td::ConstBitPtr other_hash,
-                ton::BlockSeqno other_mc_seqno) const &;
+                ton::BlockSeqno other_mc_seqno) const&;
   // NB: this is for checking whether we have already imported an internal message
   bool already_processed(const EnqueuedMsgDescr& msg) const;
 };
@@ -1132,5 +1134,10 @@ bool get_old_mc_block_id(vm::Dictionary& prev_blocks_dict, ton::BlockSeqno seqno
                          ton::LogicalTime* end_lt = nullptr);
 bool check_old_mc_block_id(vm::Dictionary* prev_blocks_dict, const ton::BlockIdExt& blkid);
 bool check_old_mc_block_id(vm::Dictionary& prev_blocks_dict, const ton::BlockIdExt& blkid);
+
+td::Result<Ref<vm::Cell>> get_block_transaction(Ref<vm::Cell> block_root, ton::WorkchainId workchain,
+                                                const ton::StdSmcAddress& addr, ton::LogicalTime lt);
+td::Result<Ref<vm::Cell>> get_block_transaction_try(Ref<vm::Cell> block_root, ton::WorkchainId workchain,
+                                                    const ton::StdSmcAddress& addr, ton::LogicalTime lt);
 
 }  // namespace block
