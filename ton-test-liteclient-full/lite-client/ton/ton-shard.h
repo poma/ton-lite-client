@@ -80,6 +80,30 @@ inline bool shard_intersects(ShardIdFull x, ShardIdFull y) {
   return x.workchain == y.workchain && shard_intersects(x.shard, y.shard);
 }
 
+inline ShardId shard_intersection(ShardId x, ShardId y) {
+  return td::lower_bit64(x) < td::lower_bit64(y) ? x : y;
+}
+
+inline ShardIdFull shard_intersection(ShardIdFull x, ShardIdFull y) {
+  return {x.workchain, shard_intersection(x. shard, y.shard)};
+}
+
+inline bool is_right_child(ShardId x) {
+  return x & (td::lower_bit64(x) << 1);
+}
+
+inline bool is_left_child(ShardId x) {
+  return !is_right_child(x);
+}
+
+inline bool is_right_child(ShardIdFull shard) {
+  return is_right_child(shard.shard);
+}
+
+inline bool is_left_child(ShardIdFull shard) {
+  return is_left_child(shard.shard);
+}
+
 template <typename T>
 inline bool shard_is_ancestor(ShardId parent, T child) {
   return shard_contains(parent, extract_top64(child));

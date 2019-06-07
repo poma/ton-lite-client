@@ -124,6 +124,10 @@ class Dictionary : public DictionaryBase {
   static BitSlice integer_key(td::RefInt256 x, unsigned n, bool sgnd = true, unsigned char buffer[128] = 0,
                               bool quiet = false);
   static bool integer_key_simple(td::RefInt256 x, unsigned n, bool sgnd, td::BitPtr buffer, bool quiet = false);
+  bool has_common_prefix(td::ConstBitPtr prefix, int prefix_len);
+  int get_common_prefix(td::BitPtr buffer, unsigned buffer_len);
+  bool cut_prefix_subdict(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix = false);
+  Ref<vm::Cell> extract_prefix_subdict_root(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix = false);
   void combine_with(Dictionary& dict2, const combine_func_t& combine_func, int mode = 0);
   void combine_with(Dictionary& dict2, const simple_combine_func_t& simple_combine_func, int mode = 0);
   void map(const map_func_t& map_func);
@@ -157,6 +161,10 @@ class Dictionary : public DictionaryBase {
   bool set_builder(const td::BitArray<n>& key, Ref<vm::CellBuilder> val_ref, SetMode mode = SetMode::Set) {
     return set_builder(key.cbits(), n, std::move(val_ref), mode);
   }
+
+ private:
+  std::pair<Ref<Cell>, bool> extract_prefix_subdict_internal(td::ConstBitPtr prefix, int prefix_len,
+                                                             bool remove_prefix = false);
 };
 
 class PrefixDictionary : public DictionaryBase {
@@ -196,6 +204,13 @@ struct LabelParser {
   bool is_prefix_of(td::ConstBitPtr key, int len) const;
   int common_prefix_len(td::ConstBitPtr key, int len) const;
   int extract_label_to(td::BitPtr to);
+  int copy_label_prefix_to(td::BitPtr to, int max_len) const;
+  td::ConstBitPtr bits() const {
+    return remainder->data_bits();
+  }
+  td::ConstBitPtr bits_end() const {
+    return bits() + l_bits;
+  }
   void skip_label() {
     remainder.write().advance(s_bits);
   }
@@ -254,6 +269,10 @@ class AugmentedDictionary : public DictionaryBase {
   bool set_ref(td::ConstBitPtr key, int key_len, Ref<Cell> val_ref, SetMode mode = SetMode::Set);
   bool set_builder(td::ConstBitPtr key, int key_len, const CellBuilder& value, SetMode mode = SetMode::Set);
   Ref<CellSlice> lookup_delete(td::ConstBitPtr key, int key_len);
+  bool has_common_prefix(td::ConstBitPtr prefix, int prefix_len);
+  int get_common_prefix(td::BitPtr buffer, unsigned buffer_len);
+  bool cut_prefix_subdict(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix = false);
+  Ref<vm::Cell> extract_prefix_subdict_root(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix = false);
   int filter(filter_func_t check);
   bool validate();
   void force_validate();
@@ -292,6 +311,8 @@ class AugmentedDictionary : public DictionaryBase {
   std::pair<Ref<Cell>, bool> dict_set(Ref<Cell> dict, td::ConstBitPtr key, int n, const CellSlice& value,
                                       SetMode mode = SetMode::Set) const;
   std::pair<Ref<CellSlice>, Ref<Cell>> dict_lookup_delete(Ref<Cell> dict, td::ConstBitPtr key, int n) const;
+  std::pair<Ref<Cell>, bool> extract_prefix_subdict_internal(td::ConstBitPtr prefix, int prefix_len,
+                                                             bool remove_prefix = false);
   std::pair<Ref<Cell>, int> dict_filter(Ref<Cell> dict, td::BitPtr key, int n, const filter_func_t& check_leaf) const;
   Ref<Cell> finish_create_leaf(CellBuilder& cb, const CellSlice& value) const;
   Ref<Cell> finish_create_fork(CellBuilder& cb, Ref<Cell> c1, Ref<Cell> c2, int n) const;

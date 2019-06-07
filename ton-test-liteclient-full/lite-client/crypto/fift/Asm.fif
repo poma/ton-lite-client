@@ -917,6 +917,13 @@ x{F4AB} @Defop PFXDICTGETEXEC
   } if
 } dup : PFXDICTCONSTGETJMP : PFXDICTSWITCH
 
+x{F4B1} @Defop SUBDICTGET
+x{F4B2} @Defop SUBDICTIGET
+x{F4B3} @Defop SUBDICTUGET
+x{F4B5} @Defop SUBDICTRPGET
+x{F4B6} @Defop SUBDICTIRPGET
+x{F4B7} @Defop SUBDICTURPGET
+
 //
 // blockchain-specific primitives
 

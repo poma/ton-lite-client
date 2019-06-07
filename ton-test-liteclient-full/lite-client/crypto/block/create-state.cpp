@@ -416,7 +416,7 @@ Ref<vm::Cell> create_state() {
   THRERR("workchain_id is unset, cannot generate state");
   PDO(workchain_id != wc_master || config_addr_set);
   THRERR("configuration smart contract must be selected");
-  PDO(cb.store_long_bool(0x9023afde, 32)      // shard_state#9023afde
+  PDO(cb.store_long_bool(0x9023afdf, 32)      // shard_state#9023afdf
       && cb.store_long_bool(global_id, 32));  // global_id:int32
   PDO(cb.store_long_bool(0, 8) && cb.store_long_bool(workchain_id, 32) &&
       cb.store_long_bool(0, 64)             // shard_id:ShardIdent
@@ -434,8 +434,8 @@ Ref<vm::Cell> create_state() {
       cb2.store_long_bool(0, 1)                            //   total_balance:CurrencyCollection
       && block::tlb::t_CurrencyCollection.null_value(cb2)  //   total_validator_fees:CurrencyCollection
       && store_public_libraries(cb2)                       //   libraries:(Hashmap 256 LibDescr)
+      && cb2.store_long_bool(0, 1)                         //   master_ref:(Maybe BlkMasterInfo)
       && cb.store_ref_bool(cb2.finalize())                 // ]
-      && cb.store_long_bool(0, 1)                          // master_ref:(Maybe BlkMasterInfo)
       && store_custom(cb));                                // custom:(Maybe  ^McStateExtra)
   THRERR("cannot create blockchain state");
   Ref<vm::Cell> cell = cb.finalize();

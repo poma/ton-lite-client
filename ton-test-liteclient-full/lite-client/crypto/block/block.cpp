@@ -315,14 +315,14 @@ std::unique_ptr<MsgProcessedUptoCollection> MsgProcessedUptoCollection::unpack(t
   return v && v->valid ? std::move(v) : std::unique_ptr<MsgProcessedUptoCollection>{};
 }
 
-bool MsgProcessedUpto::contains(const MsgProcessedUpto& other) const& {
+bool MsgProcessedUpto::contains(const MsgProcessedUpto& other) const & {
   return ton::shard_is_ancestor(shard, other.shard) && mc_seqno >= other.mc_seqno &&
          (last_inmsg_lt > other.last_inmsg_lt ||
           (last_inmsg_lt == other.last_inmsg_lt && !(last_inmsg_hash < other.last_inmsg_hash)));
 }
 
 bool MsgProcessedUpto::contains(ton::ShardId other_shard, ton::LogicalTime other_lt, td::ConstBitPtr other_hash,
-                                ton::BlockSeqno other_mc_seqno) const& {
+                                ton::BlockSeqno other_mc_seqno) const & {
   return ton::shard_is_ancestor(shard, other_shard) && mc_seqno >= other_mc_seqno &&
          (last_inmsg_lt > other_lt || (last_inmsg_lt == other_lt && !(last_inmsg_hash < other_hash)));
 }
@@ -2255,7 +2255,7 @@ bool BlockIdExt::pack(vm::CellBuilder& cb, const ton::BlockIdExt& data) const {
 const BlockIdExt t_BlockIdExt;
 
 bool ShardState::skip(vm::CellSlice& cs) const {
-  return get_tag(cs) == shard_state && cs.advance(64)  // shard_state#9023afde blockchain_id:int32
+  return get_tag(cs) == shard_state && cs.advance(64)  // shard_state#9023afdf blockchain_id:int32
          && t_ShardIdent.skip(cs)                      // shard_id:ShardIdent
          && cs.advance(32 + 32 + 32 + 64 +
                        32)  // seq_no:int32 vert_seq_no:# gen_utime:uint32 gen_lt:uint64 min_ref_mc_seqno:uint32
@@ -2264,8 +2264,7 @@ bool ShardState::skip(vm::CellSlice& cs) const {
          && t_ShardAccounts.skip(cs)        // accounts:ShardAccounts
          &&
          cs.advance_refs(
-             1)  // ^[ total_balance:CurrencyCollection total_validator_fees:CurrencyCollection libraries:(HashmapE 256 LibDescr) ]
-         && Maybe<BlkMasterInfo>{}.skip(cs)         // master_ref:(Maybe BlkMasterInfo)
+             1)  // ^[ total_balance:CurrencyCollection total_validator_fees:CurrencyCollection libraries:(HashmapE 256 LibDescr) master_ref:(Maybe BlkMasterInfo) ]
          && Maybe<RefTo<McStateExtra>>{}.skip(cs);  // custom:(Maybe ^McStateExtra)
 }
 
@@ -2281,25 +2280,26 @@ bool ShardState::validate_skip(vm::CellSlice& cs) const {
          && t_ShardAccounts.validate_skip(cs)        // accounts:ShardAccounts
          &&
          t_ShardState_aux.validate_skip_ref(
-             cs)  // ^[ total_balance:CurrencyCollection total_validator_fees:CurrencyCollection libraries:(HashmapE 256 LibDescr) ]
-         && Maybe<BlkMasterInfo>{}.validate_skip(cs)         // master_ref:(Maybe BlkMasterInfo)
+             cs)  // ^[ total_balance:CurrencyCollection total_validator_fees:CurrencyCollection libraries:(HashmapE 256 LibDescr) master_ref:(Maybe BlkMasterInfo) ]
          && Maybe<RefTo<McStateExtra>>{}.validate_skip(cs);  // custom:(Maybe ^McStateExtra)
 }
 
 const ShardState t_ShardState;
 
 bool ShardState_aux::skip(vm::CellSlice& cs) const {
-  return cs.advance(128)                         // overload_history:uint64 underload_history:uint64
-         && t_CurrencyCollection.skip(cs)        // total_balance:CurrencyCollection
-         && t_CurrencyCollection.skip(cs)        // total_validator_fees:CurrencyCollection
-         && HashmapE{256, t_LibDescr}.skip(cs);  // libraries:(HashmapE 256 LibDescr)
+  return cs.advance(128)                        // overload_history:uint64 underload_history:uint64
+         && t_CurrencyCollection.skip(cs)       // total_balance:CurrencyCollection
+         && t_CurrencyCollection.skip(cs)       // total_validator_fees:CurrencyCollection
+         && HashmapE{256, t_LibDescr}.skip(cs)  // libraries:(HashmapE 256 LibDescr)
+         && Maybe<BlkMasterInfo>{}.skip(cs);    // master_ref:(Maybe BlkMasterInfo)
 }
 
 bool ShardState_aux::validate_skip(vm::CellSlice& cs) const {
-  return cs.advance(128)                                  // overload_history:uint64 underload_history:uint64
-         && t_CurrencyCollection.validate_skip(cs)        // total_balance:CurrencyCollection
-         && t_CurrencyCollection.validate_skip(cs)        // total_validator_fees:CurrencyCollection
-         && HashmapE{256, t_LibDescr}.validate_skip(cs);  // libraries:(HashmapE 256 LibDescr)
+  return cs.advance(128)                                 // overload_history:uint64 underload_history:uint64
+         && t_CurrencyCollection.validate_skip(cs)       // total_balance:CurrencyCollection
+         && t_CurrencyCollection.validate_skip(cs)       // total_validator_fees:CurrencyCollection
+         && HashmapE{256, t_LibDescr}.validate_skip(cs)  // libraries:(HashmapE 256 LibDescr)
+         && Maybe<BlkMasterInfo>{}.validate_skip(cs);    // master_ref:(Maybe BlkMasterInfo)
 }
 
 const ShardState_aux t_ShardState_aux;

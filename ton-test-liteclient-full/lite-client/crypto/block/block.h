@@ -124,12 +124,12 @@ struct MsgProcessedUpto {
   MsgProcessedUpto(ton::ShardId _shard, ton::BlockSeqno _mcseqno, ton::LogicalTime _lt, td::ConstBitPtr _hash)
       : shard(_shard), mc_seqno(_mcseqno), last_inmsg_lt(_lt), last_inmsg_hash(_hash) {
   }
-  bool operator<(const MsgProcessedUpto& other) const& {
+  bool operator<(const MsgProcessedUpto& other) const & {
     return shard < other.shard || (shard == other.shard && mc_seqno < other.mc_seqno);
   }
-  bool contains(const MsgProcessedUpto& other) const&;
+  bool contains(const MsgProcessedUpto& other) const &;
   bool contains(ton::ShardId other_shard, ton::LogicalTime other_lt, td::ConstBitPtr other_hash,
-                ton::BlockSeqno other_mc_seqno) const&;
+                ton::BlockSeqno other_mc_seqno) const &;
   // NB: this is for checking whether we have already imported an internal message
   bool already_processed(const EnqueuedMsgDescr& msg) const;
 };
@@ -1034,7 +1034,7 @@ struct BlockIdExt final : TLB_Complex {
 extern const BlockIdExt t_BlockIdExt;
 
 struct ShardState final : TLB_Complex {
-  enum { shard_state = (int)0x9023afde };
+  enum { shard_state = (int)0x9023afdf };
   bool skip(vm::CellSlice& cs) const override;
   bool validate_skip(vm::CellSlice& cs) const override;
   int get_tag(const vm::CellSlice& cs) const override {

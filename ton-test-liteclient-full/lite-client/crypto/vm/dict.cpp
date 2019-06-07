@@ -347,6 +347,19 @@ int LabelParser::extract_label_to(td::BitPtr to) {
   return l_bits;
 }
 
+int LabelParser::copy_label_prefix_to(td::BitPtr to, int max_len) const {
+  if (max_len <= 0) {
+    return max_len;
+  }
+  int sz = std::min(max_len, l_bits);
+  if (!l_same) {
+    to.copy_from(remainder->data_bits(), sz);
+  } else {
+    to.fill(l_same & 1, sz);
+  }
+  return sz;
+}
+
 }  // namespace dict
 
 /*
@@ -430,6 +443,43 @@ Ref<CellSlice> Dictionary::lookup(td::ConstBitPtr key, int key_len) {
 
 Ref<Cell> Dictionary::lookup_ref(td::ConstBitPtr key, int key_len) {
   return extract_value_ref(lookup(key, key_len));
+}
+
+bool Dictionary::has_common_prefix(td::ConstBitPtr prefix, int prefix_len) {
+  force_validate();
+  if (is_empty() || prefix_len <= 0) {
+    return true;
+  }
+  if (prefix_len > get_key_bits()) {
+    return false;
+  }
+  int n = get_key_bits();
+  Ref<Cell> cell = get_root_cell();
+  while (true) {
+    LabelParser label{std::move(cell), n};
+    if (!label.is_prefix_of(prefix, prefix_len)) {
+      return false;
+    }
+    assert(prefix_len >= label.l_bits);
+    prefix_len -= label.l_bits;
+    if (!prefix_len) {
+      return true;
+    }
+    n -= label.l_bits;
+    prefix += label.l_bits;
+    cell = label.remainder->prefetch_ref(*prefix++);
+    --prefix_len;
+    --n;
+  }
+}
+
+int Dictionary::get_common_prefix(td::BitPtr buffer, unsigned buffer_len) {
+  force_validate();
+  if (is_empty()) {
+    return -1;
+  }
+  LabelParser label{get_root_cell(), get_key_bits()};
+  return label.copy_label_prefix_to(buffer, (int)buffer_len);
 }
 
 bool Dictionary::key_exists(td::ConstBitPtr key, int key_len) {
@@ -1464,6 +1514,79 @@ Ref<Cell> Dictionary::extract_minmax_key_ref(td::BitPtr key_buffer, int key_len,
   return extract_value_ref(extract_minmax_key(key_buffer, key_len, fetch_max, invert_first));
 }
 
+std::pair<Ref<Cell>, bool> Dictionary::extract_prefix_subdict_internal(td::ConstBitPtr prefix, int prefix_len,
+                                                                       bool remove_prefix) {
+  force_validate();
+  if (is_empty() || prefix_len <= 0) {
+    return {{}, false};  // unchanged
+  }
+  if (prefix_len > get_key_bits()) {
+    return {{}, true};  // empty dict
+  }
+  int n = get_key_bits(), m = 0;
+  Ref<Cell> cell = get_root_cell();
+  while (true) {
+    LabelParser label{std::move(cell), n - m};
+    int l = std::min(prefix_len - m, label.l_bits);
+    if (label.common_prefix_len(prefix + m, l) < l) {
+      return {{}, true};  // empty dict
+    }
+    if (m + label.l_bits < prefix_len) {
+      m += label.l_bits;
+      cell = label.remainder->prefetch_ref(prefix[m++]);
+      continue;
+    }
+    // end, have consumed all of prefix
+    vm::CellBuilder cb;
+    if (!remove_prefix) {
+      if (!m) {
+        // dictionary unchanged: all keys already begin with prefix
+        return {{}, false};
+      }
+      // concatenate prefix with a suffix of the label
+      assert(m <= prefix_len);
+      unsigned char buffer[max_key_bytes];
+      auto p = td::BitPtr{buffer};
+      p.copy_from(prefix, m);
+      label.extract_label_to(p + m);
+      append_dict_label(cb, p, m + label.l_bits, key_bits);
+    } else if (!label.l_same) {
+      m += label.l_bits - prefix_len;  // leave that many last bits of the label
+      append_dict_label(cb, label.bits_end() - m, m, key_bits - prefix_len);
+      label.skip_label();
+    } else {
+      m += label.l_bits - prefix_len;  // leave that many last bits of the label
+      append_dict_label_same(cb, label.l_same & 1, m, key_bits - prefix_len);
+    }
+    if (!cb.append_cellslice_bool(*label.remainder)) {
+      throw VmError{Excno::cell_ov, "cannot create new dictionary root while constructing prefix subdictionary"};
+    }
+    return {Ref<Cell>{cb.finalize()}, true};
+  }
+}
+
+bool Dictionary::cut_prefix_subdict(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix) {
+  if (prefix_len < 0) {
+    return false;
+  }
+  if (prefix_len > key_bits && remove_prefix) {
+    return false;
+  }
+  auto res = extract_prefix_subdict_internal(prefix, prefix_len, remove_prefix);
+  if (remove_prefix) {
+    key_bits -= prefix_len;
+  }
+  if (res.second) {
+    set_root_cell(std::move(res.first));
+  }
+  return true;
+}
+
+Ref<vm::Cell> Dictionary::extract_prefix_subdict_root(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix) {
+  auto res = extract_prefix_subdict_internal(prefix, prefix_len, remove_prefix);
+  return res.second ? res.first : root_cell;
+}
+
 void Dictionary::map(const map_func_t& map_func) {
   force_validate();
   int key_len = get_key_bits();
@@ -1860,6 +1983,43 @@ std::pair<Ref<Cell>, Ref<CellSlice>> AugmentedDictionary::lookup_ref_extra(td::C
   }
 }
 
+bool AugmentedDictionary::has_common_prefix(td::ConstBitPtr prefix, int prefix_len) {
+  force_validate();
+  if (is_empty() || prefix_len <= 0) {
+    return true;
+  }
+  if (prefix_len > get_key_bits()) {
+    return false;
+  }
+  int n = get_key_bits();
+  Ref<Cell> cell = get_root_cell();
+  while (true) {
+    LabelParser label{std::move(cell), n, 2};
+    if (!label.is_prefix_of(prefix, prefix_len)) {
+      return false;
+    }
+    assert(prefix_len >= label.l_bits);
+    prefix_len -= label.l_bits;
+    if (!prefix_len) {
+      return true;
+    }
+    n -= label.l_bits;
+    prefix += label.l_bits;
+    cell = label.remainder->prefetch_ref(*prefix++);
+    --prefix_len;
+    --n;
+  }
+}
+
+int AugmentedDictionary::get_common_prefix(td::BitPtr buffer, unsigned buffer_len) {
+  force_validate();
+  if (is_empty()) {
+    return -1;
+  }
+  LabelParser label{get_root_cell(), get_key_bits(), 2};
+  return label.copy_label_prefix_to(buffer, (int)buffer_len);
+}
+
 Ref<Cell> AugmentedDictionary::finish_create_leaf(CellBuilder& cb, const CellSlice& value) const {
   CellSlice value_copy{value};
   if (!aug.eval_leaf(cb, value_copy)) {
@@ -2094,6 +2254,81 @@ Ref<CellSlice> AugmentedDictionary::lookup_delete(td::ConstBitPtr key, int key_l
     set_root_cell(std::move(res.second));
   }
   return std::move(res.first);
+}
+
+std::pair<Ref<Cell>, bool> AugmentedDictionary::extract_prefix_subdict_internal(td::ConstBitPtr prefix, int prefix_len,
+                                                                                bool remove_prefix) {
+  force_validate();
+  if (is_empty() || prefix_len <= 0) {
+    return {{}, false};  // unchanged
+  }
+  if (prefix_len > get_key_bits()) {
+    return {{}, true};  // empty dict
+  }
+  int n = get_key_bits(), m = 0;
+  Ref<Cell> cell = get_root_cell();
+  while (true) {
+    LabelParser label{std::move(cell), n - m, 2};
+    int l = std::min(prefix_len - m, label.l_bits);
+    if (label.common_prefix_len(prefix + m, l) < l) {
+      return {{}, true};  // empty dict
+    }
+    if (m + label.l_bits < prefix_len) {
+      m += label.l_bits;
+      cell = label.remainder->prefetch_ref(prefix[m++]);
+      continue;
+    }
+    // end, have consumed all of prefix
+    vm::CellBuilder cb;
+    if (!remove_prefix) {
+      if (!m) {
+        // dictionary unchanged: all keys already begin with prefix
+        return {{}, false};
+      }
+      // concatenate prefix with a suffix of the label
+      assert(m <= prefix_len);
+      unsigned char buffer[max_key_bytes];
+      auto p = td::BitPtr{buffer};
+      p.copy_from(prefix, m);
+      label.extract_label_to(p + m);
+      append_dict_label(cb, p, m + label.l_bits, key_bits);
+    } else if (!label.l_same) {
+      m += label.l_bits - prefix_len;  // leave that many last bits of the label
+      append_dict_label(cb, label.bits_end() - m, m, key_bits - prefix_len);
+      label.skip_label();
+    } else {
+      m += label.l_bits - prefix_len;  // leave that many last bits of the label
+      append_dict_label_same(cb, label.l_same & 1, m, key_bits - prefix_len);
+    }
+    if (!cb.append_cellslice_bool(*label.remainder)) {
+      throw VmError{Excno::cell_ov,
+                    "cannot create new augmented dictionary root while constructing prefix subdictionary"};
+    }
+    return {Ref<Cell>{cb.finalize()}, true};
+  }
+}
+
+bool AugmentedDictionary::cut_prefix_subdict(td::ConstBitPtr prefix, int prefix_len, bool remove_prefix) {
+  if (prefix_len < 0) {
+    return false;
+  }
+  if (prefix_len > key_bits && remove_prefix) {
+    return false;
+  }
+  auto res = extract_prefix_subdict_internal(prefix, prefix_len, remove_prefix);
+  if (remove_prefix) {
+    key_bits -= prefix_len;
+  }
+  if (res.second) {
+    set_root_cell(std::move(res.first));
+  }
+  return true;
+}
+
+Ref<vm::Cell> AugmentedDictionary::extract_prefix_subdict_root(td::ConstBitPtr prefix, int prefix_len,
+                                                               bool remove_prefix) {
+  auto res = extract_prefix_subdict_internal(prefix, prefix_len, remove_prefix);
+  return res.second ? res.first : root_cell;
 }
 
 std::pair<Ref<Cell>, int> AugmentedDictionary::dict_filter(Ref<Cell> dict, td::BitPtr key, int n,

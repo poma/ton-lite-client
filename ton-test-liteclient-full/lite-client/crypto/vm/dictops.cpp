@@ -126,6 +126,15 @@ std::string dump_dictop2(unsigned args, const char* name) {
   return os.str();
 }
 
+std::string dump_subdictop2(unsigned args, const char* name) {
+  std::ostringstream os{"SUBDICT"};
+  if (args & 2) {
+    os << (args & 1 ? 'U' : 'I');
+  }
+  os << name;
+  return os.str();
+}
+
 int exec_dict_get(VmState* st, unsigned args) {
   Stack& stack = st->get_stack();
   VM_LOG(st) << "execute DICT" << (args & 4 ? (args & 2 ? "U" : "I") : "") << "GET" << (args & 1 ? "REF\n" : "\n");
@@ -582,6 +591,31 @@ int exec_const_pfx_dict_switch(VmState* st, CellSlice& cs, unsigned args, int pf
   }
 }
 
+int exec_subdict_get(VmState* st, unsigned args) {
+  Stack& stack = st->get_stack();
+  VM_LOG(st) << "execute SUBDICT" << (args & 2 ? (args & 1 ? "U" : "I") : "") << (args & 4 ? "RP" : "") << "GET";
+  stack.check_underflow(4);
+  int n = stack.pop_smallint_range(Dictionary::max_key_bits);
+  Dictionary dict{stack.pop_cellslice(), n};
+  int mk = (args & 2 ? (args & 1 ? 256 : 257) : Dictionary::max_key_bits);
+  int k = stack.pop_smallint_range(std::min(mk, n));
+  BitSlice key;
+  unsigned char buffer[Dictionary::max_key_bytes];
+  if (args & 2) {
+    key = dict.integer_key(stack.pop_int(), k, !(args & 1), buffer, true);
+  } else {
+    key = stack.pop_cellslice()->prefetch_bits(k);
+  }
+  if (!key.is_valid()) {
+    throw VmError{Excno::cell_und, "not enough bits for a dictionary key prefix"};
+  }
+  if (!dict.cut_prefix_subdict(key.get_bitptr(), k, args & 4)) {
+    throw VmError{Excno::dict_err, "cannot construct subdictionary by key prefix"};
+  }
+  stack.push_cellslice(std::move(dict).extract_root());
+  return 0;
+}
+
 void register_dictionary_ops(OpcodeTable& cp0) {
   using namespace std::placeholders;
   cp0.insert(OpcodeInstr::mksimple(0xf400, 16, "DICTEMPTY", exec_dict_empty))
@@ -646,7 +680,10 @@ void register_dictionary_ops(OpcodeTable& cp0) {
       .insert(OpcodeInstr::mksimple(0xf4ab, 16, "PFXDICTGETEXEC", std::bind(exec_pfx_dict_get, _1, 3, "EXEC")))
       .insert(OpcodeInstr::mkextrange(0xf4ac00, 0xf4b000, 24, 11,
                                       std::bind(dump_push_const_dict, _1, _3, "PFXDICTSWITCH"),
-                                      exec_const_pfx_dict_switch, compute_len_push_const_dict));
+                                      exec_const_pfx_dict_switch, compute_len_push_const_dict))
+      .insert(OpcodeInstr::mkfixedrange(0xf4b1, 0xf4b4, 16, 3, std::bind(dump_subdictop2, _2, "GET"), exec_subdict_get))
+      .insert(
+          OpcodeInstr::mkfixedrange(0xf4b5, 0xf4b8, 16, 3, std::bind(dump_subdictop2, _2, "RPGET"), exec_subdict_get));
 }
 
 }  // namespace vm
