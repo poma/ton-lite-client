@@ -1,4 +1,4 @@
-# Telegram Open Network lite client [![Build Status](https://travis-ci.org/poma/TON-CI.svg?branch=master)](https://travis-ci.org/poma/TON-CI)
+# Telegram Open Network lite client [![Build Status](https://travis-ci.org/poma/ton-lite-client.svg?branch=master)](https://travis-ci.org/poma/ton-lite-client)
 
 This is a full unchanged TON lite node source from https://test.ton.org/download. This is a perfect starting point if you want to fork TON client and add custom features. Our bot checks upstream for updates every 5 min and commits any changes.
 
