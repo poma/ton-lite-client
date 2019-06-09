@@ -16,11 +16,11 @@ FROM ubuntu:16.04
 RUN apt update && \
 	apt install -y openssl && \
 	rm -rf /var/lib/apt/lists/*
-COPY --from=builder build/test-lite-client /usr/local/bin/test-lite-client
-COPY --from=builder build/crypto/fift /usr/local/bin/
-COPY --from=builder build/crypto/tlbc /usr/local/bin/
-COPY --from=builder crypto/fift/Asm.fif /usr/include/ton/
-COPY --from=builder crypto/fift/Fift.fif /usr/include/ton/
+COPY --from=builder /ton/build/test-lite-client /usr/local/bin/test-lite-client
+COPY --from=builder /ton/build/crypto/fift /usr/local/bin/
+COPY --from=builder /ton/build/crypto/tlbc /usr/local/bin/
+COPY --from=builder /ton/crypto/fift/Asm.fif /usr/include/ton/
+COPY --from=builder /ton/crypto/fift/Fift.fif /usr/include/ton/
 COPY ton-lite-client-test1.config.json /etc/ton/
 ENV FIFTPATH=/usr/include/ton
 WORKDIR /data
