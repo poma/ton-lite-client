@@ -1,0 +1,101 @@
+if: tag IS blank
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - gperf
+
+    - os: linux
+      dist: xenial
+      compiler: clang
+      addons:
+       apt:
+         packages:
+           - gperf
+
+    - os: osx
+      osx_image: xcode10.2
+      compiler: clang
+      env:
+        - PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/openssl/lib/pkgconfig"
+      addons:
+        homebrew:
+          packages:
+            - openssl
+
+    - os: windows
+      # compiler: clang
+      # env:
+      #   - CC="/c/Program Files/LLVM/bin/clang"
+      #   - CXX="/c/Program Files/LLVM/bin/clang++"
+
+  allow_failures:
+    - os: osx
+    - os: windows
+    - os: linux
+      compiler: gcc
+
+install:
+  - env
+  - ${CC} --version
+  - ${CC} -v
+  - ${CXX} --version
+  - ${CXX} -v
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      export RELEASE_FILE=ton_client_linux_${TRAVIS_DIST}_$(basename $CC)_${TRAVIS_ARCH}.tar.gz
+    elif [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      export RELEASE_FILE=ton_client_osx_${TRAVIS_OSX_IMAGE}_$(basename $CC)_${TRAVIS_ARCH}.tar.gz
+    elif [[ "${TRAVIS_OS_NAME}" == "windows" ]]; then
+      export RELEASE_FILE=ton_client_windows_$(basename $CC)_${TRAVIS_ARCH}.tar.gz
+      # ZLIB dependency is broken, here are a few attempts to fix:
+      # choco upgrade llvm openssl.light -y
+      # choco install 7zip
+      # wget -O zlib.7z http://www.samsonov.net/wp/assets/Dist_zlib/X64-release/zlib.7z
+      # 7z x zlib.7z
+      # export ZLIB_ROOT=`pwd`
+      # export ZLIB_INCLUDE_DIR="`pwd`/include"
+      # # export ZLIB_LIBRARY="`pwd`/lib/zlib.lib"
+      # export ZLIB_LIBRARY="`pwd`/bin/zlib1.dll"
+      # echo $ZLIB_ROOT $ZLIB_INCLUDE_DIR $ZLIB_LIBRARY
+      # ls $ZLIB_INCLUDE_DIR
+      # ls $ZLIB_LIBRARY
+      # ls $ZLIB_ROOT
+      # tree.com //a
+      # pwd
+      # wget https://gist.githubusercontent.com/horta/18a6bda81f254d6a9f8f61e82101b66b/raw/f476b0820605fa7917a8881d3dd9b5b991ab6972/install-zlib.bat
+      # ./install-zlib.bat
+    fi
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. 
+  - cmake --build . --target test-lite-client
+  - cmake --build . --target fift
+  # - ctest
+  - mkdir ton-client
+  - mv test-lite-client ton-client
+  - mv crypto/fift ton-client
+  - mv ../crypto/fift/*.fif ton-client
+  - mv ../ton-lite-client-test1.config.json ton-client
+  - tar -czvf $RELEASE_FILE ton-client
+
+before_deploy:
+  - git config --local user.name "poma"
+  - git config --local user.email "semenov.roman@mail.ru"
+  - export TRAVIS_TAG=${TRAVIS_TAG:-build-$TRAVIS_BUILD_NUMBER}
+  - git tag $TRAVIS_TAG
+
+deploy:
+  provider: releases
+  api_key:
+    secure: "SA92Hx4Rc6JLk+3CwfckZ4HAVWoMrjl4zM4Vyp5Ky9QbU4rnbWpFBNoWTFMH5/akXBVetqmRnnmiZFsKpSCwrHFolrq1ISqj3jkpoVoMr++O/sz+MQyBvx8PPeWTmfzLo1Lr18ZKqcF/fZ6qrtjN6SqlQQghWgTiDLeB9EcZ6TBkUjgEMj2wnktKypOU8QGvp2GAknwQVJM8uOqW8aM0hslkK2Qxq4lAPZdIdd9IVoEUSkSB0YV3UL7jUOAvTym6pDrUPKwGg6an1EsbV315pxadWn498GvO1Uw43qon7lVnFYsjrWovT4idrJORWVEV1riTe9t/0p/V5/v+4empDDTuxIzEIS+644Y4sMpb1c0pzMeKZC+fV4yApdfrfH6RnR4bCmK7Q4PcQWDE76gKDp/1Njs3qfl67tv9/+6IQNUGwL7apnScMu/apWtGNaV5zOryx3hiFx+JL7dVAZpNY7yxUGmYD8M9w3L5mnEJjsnD3rmhqTRxhWdGiH6gte4fmya9gOd2p7GyuXVm39hcDfNbzDKjRE5CqfJRkPsAu/Ggxg+hoJi54IqXBamKglFt6M9qj17fa7buqPV0/xoPide+WQ6YNu2XT1KMg1LrwqH47DrfoPGf5dwKU38s9kn1lMX8umrmN1q690wmt/1Xl7ZkRPFg0O4PpecVLJabEWI="
+  file: $RELEASE_FILE
+  skip_cleanup: true
