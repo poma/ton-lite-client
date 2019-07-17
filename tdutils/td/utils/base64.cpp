@@ -124,7 +124,7 @@ Result<SecureString> base64_decode_secure(Slice base64) {
   TRY_STATUS(base64_do_decode(base64, [&ptr](char c) { *ptr++ = c; }));
   size_t size = ptr - output.as_mutable_slice().begin();
   if (size == output.size()) {
-    return output;
+    return std::move(output);
   }
   return SecureString(output.as_slice().substr(0, size));
 }

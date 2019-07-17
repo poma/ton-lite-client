@@ -225,7 +225,7 @@ Result<SecureString> Ed25519::PrivateKey::sign(Slice data) const {
   if (EVP_DigestSign(md_ctx, res.as_mutable_slice().ubegin(), &len, data.ubegin(), data.size()) <= 0) {
     return Status::Error("Can't sign data");
   }
-  return res;
+  return std::move(res);
 }
 
 Status Ed25519::PublicKey::verify_signature(Slice data, Slice signature) const {
@@ -327,7 +327,7 @@ Result<SecureString> Ed25519::compute_shared_secret(const PublicKey &public_key,
   if (EVP_PKEY_derive(ctx, result.as_mutable_slice().ubegin(), &result_len) <= 0) {
     return Status::Error("Failed to compute shared secret");
   }
-  return result;
+  return std::move(result);
 }
 
 #else
