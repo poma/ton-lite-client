@@ -238,6 +238,9 @@ struct Account {
   Account(ton::WorkchainId wc, td::ConstBitPtr _addr, int depth)
       : split_depth_set_(true), split_depth_((unsigned char)depth), workchain(wc), addr(_addr) {
   }
+  block::CurrencyCollection get_balance() const {
+    return block::CurrencyCollection{balance, extra_balance};
+  }
   bool set_address(ton::WorkchainId wc, td::ConstBitPtr new_addr);
   bool unpack(Ref<vm::CellSlice> account, Ref<vm::CellSlice> extra, ton::UnixTime now, bool special = false);
   bool init_new(ton::UnixTime now);

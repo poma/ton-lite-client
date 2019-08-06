@@ -884,6 +884,8 @@ struct ExtBlkRef final : TLB {
   int get_size(const vm::CellSlice& cs) const override {
     return fixed_size;
   }
+  bool unpack(vm::CellSlice& cs, ton::BlockIdExt& blkid, ton::LogicalTime* end_lt = nullptr) const;
+  bool unpack(Ref<vm::CellSlice> cs_ref, ton::BlockIdExt& blkid, ton::LogicalTime* end_lt = nullptr) const;
 };
 
 extern const ExtBlkRef t_ExtBlkRef;

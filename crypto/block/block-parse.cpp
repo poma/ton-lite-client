@@ -1836,6 +1836,36 @@ bool OutMsgQueueInfo::validate_skip(vm::CellSlice& cs) const {
 const OutMsgQueueInfo t_OutMsgQueueInfo;
 const RefTo<OutMsgQueueInfo> t_Ref_OutMsgQueueInfo;
 
+bool ExtBlkRef::unpack(vm::CellSlice& cs, ton::BlockIdExt& blkid, ton::LogicalTime* end_lt) const {
+  block::gen::ExtBlkRef::Record data;
+  if (!tlb::unpack(cs, data)) {
+    blkid.invalidate();
+    return false;
+  }
+  blkid.id = ton::BlockId{ton::masterchainId, ton::shardIdAll, data.seq_no};
+  blkid.root_hash = data.root_hash;
+  blkid.file_hash = data.file_hash;
+  if (end_lt) {
+    *end_lt = data.end_lt;
+  }
+  return true;
+}
+
+bool ExtBlkRef::unpack(Ref<vm::CellSlice> cs_ref, ton::BlockIdExt& blkid, ton::LogicalTime* end_lt) const {
+  block::gen::ExtBlkRef::Record data;
+  if (!tlb::csr_unpack_safe(std::move(cs_ref), data)) {
+    blkid.invalidate();
+    return false;
+  }
+  blkid.id = ton::BlockId{ton::masterchainId, ton::shardIdAll, data.seq_no};
+  blkid.root_hash = data.root_hash;
+  blkid.file_hash = data.file_hash;
+  if (end_lt) {
+    *end_lt = data.end_lt;
+  }
+  return true;
+}
+
 const ExtBlkRef t_ExtBlkRef;
 const BlkMasterInfo t_BlkMasterInfo;
 

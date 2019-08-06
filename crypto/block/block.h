@@ -318,6 +318,9 @@ struct CurrencyCollection {
   explicit CurrencyCollection(td::RefInt256 _grams, Ref<vm::Cell> _extra = {})
       : grams(std::move(_grams)), extra(std::move(_extra)) {
   }
+  explicit CurrencyCollection(long long _grams, Ref<vm::Cell> _extra = {})
+      : grams(true, _grams), extra(std::move(_extra)) {
+  }
   bool set_zero() {
     grams = td::RefInt256{true, 0};
     extra.clear();
@@ -360,8 +363,10 @@ struct CurrencyCollection {
   static bool add(const CurrencyCollection& a, CurrencyCollection&& b, CurrencyCollection& c);
   CurrencyCollection& operator+=(const CurrencyCollection& other);
   CurrencyCollection& operator+=(CurrencyCollection&& other);
+  CurrencyCollection& operator+=(td::RefInt256 other_grams);
   CurrencyCollection operator+(const CurrencyCollection& other) const;
   CurrencyCollection operator+(CurrencyCollection&& other) const;
+  CurrencyCollection operator+(td::RefInt256 other_grams);
   static bool sub(const CurrencyCollection& a, const CurrencyCollection& b, CurrencyCollection& c);
   static bool sub(const CurrencyCollection& a, CurrencyCollection&& b, CurrencyCollection& c);
   CurrencyCollection& operator-=(const CurrencyCollection& other);
@@ -455,7 +460,7 @@ bool get_old_mc_block_id(vm::AugmentedDictionary* prev_blocks_dict, ton::BlockSe
 bool get_old_mc_block_id(vm::AugmentedDictionary& prev_blocks_dict, ton::BlockSeqno seqno, ton::BlockIdExt& blkid,
                          ton::LogicalTime* end_lt = nullptr);
 bool unpack_old_mc_block_id(Ref<vm::CellSlice> old_blk_info, ton::BlockSeqno seqno, ton::BlockIdExt& blkid,
-                            ton::LogicalTime* end_lt);
+                            ton::LogicalTime* end_lt = nullptr);
 bool check_old_mc_block_id(vm::AugmentedDictionary* prev_blocks_dict, const ton::BlockIdExt& blkid);
 bool check_old_mc_block_id(vm::AugmentedDictionary& prev_blocks_dict, const ton::BlockIdExt& blkid);
 

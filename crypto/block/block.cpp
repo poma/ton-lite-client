@@ -1045,6 +1045,16 @@ CurrencyCollection& CurrencyCollection::operator+=(CurrencyCollection&& other) {
   return *this;
 }
 
+CurrencyCollection& CurrencyCollection::operator+=(td::RefInt256 other_grams) {
+  if (!is_valid()) {
+    return *this;
+  }
+  if (!(other_grams.not_null() && (grams += other_grams).not_null())) {
+    invalidate();
+  }
+  return *this;
+}
+
 CurrencyCollection CurrencyCollection::operator+(const CurrencyCollection& other) const {
   CurrencyCollection res;
   add(*this, other, res);
@@ -1055,6 +1065,18 @@ CurrencyCollection CurrencyCollection::operator+(CurrencyCollection&& other) con
   CurrencyCollection res;
   add(*this, std::move(other), res);
   return res;
+}
+
+CurrencyCollection CurrencyCollection::operator+(td::RefInt256 other_grams) {
+  if (!is_valid()) {
+    return *this;
+  }
+  auto sum = grams + other_grams;
+  if (sum.not_null()) {
+    return CurrencyCollection{std::move(sum), extra};
+  } else {
+    return CurrencyCollection{};
+  }
 }
 
 bool CurrencyCollection::sub(const CurrencyCollection& a, const CurrencyCollection& b, CurrencyCollection& c) {
@@ -1421,14 +1443,15 @@ std::pair<int, int> perform_hypercube_routing(ton::AccountIdPrefixFull src, ton:
   if (!ton::shard_contains(cur, transit)) {
     return {-1, -1};
   }
+  if (transit.account_id_prefix == dest.account_id_prefix || ton::shard_contains(cur, dest)) {
+    // if destination is already reached, or is in this shard, set cur:=next_hop:=dest
+    return {96, 96};
+  }
   if (transit.workchain == ton::masterchainId || dest.workchain == ton::masterchainId) {
-    return {0, 96};  // route messages to/from masterchain directly
+    return {used_dest_bits, 96};  // route messages to/from masterchain directly
   }
   if (transit.workchain != dest.workchain) {
     return {used_dest_bits, 32};
-  }
-  if (transit.account_id_prefix == dest.account_id_prefix || ton::shard_contains(cur, dest)) {
-    return {96, 96};
   }
   unsigned long long x = cur.shard & (cur.shard - 1), y = cur.shard | (cur.shard - 1);
   unsigned long long t = transit.account_id_prefix, q = dest.account_id_prefix ^ t;
@@ -1571,18 +1594,8 @@ bool get_old_mc_block_id(vm::AugmentedDictionary& prev_blocks_dict, ton::BlockSe
 
 bool unpack_old_mc_block_id(Ref<vm::CellSlice> old_blk_info, ton::BlockSeqno seqno, ton::BlockIdExt& blkid,
                             ton::LogicalTime* end_lt) {
-  block::gen::ExtBlkRef::Record data;
-  if (!(old_blk_info.not_null() && old_blk_info.write().advance(1) &&
-        ::tlb::csr_unpack(std::move(old_blk_info), data) && data.seq_no == seqno)) {
-    return false;
-  }
-  blkid.id = ton::BlockId{ton::masterchainId, ton::shardIdAll, seqno};
-  blkid.root_hash = data.root_hash;
-  blkid.file_hash = data.file_hash;
-  if (end_lt) {
-    *end_lt = data.end_lt;
-  }
-  return true;
+  return old_blk_info.not_null() && old_blk_info.write().advance(1) &&
+         block::tlb::t_ExtBlkRef.unpack(std::move(old_blk_info), blkid, end_lt) && blkid.seqno() == seqno;
 }
 
 bool check_old_mc_block_id(vm::AugmentedDictionary* prev_blocks_dict, const ton::BlockIdExt& blkid) {
@@ -1593,13 +1606,9 @@ bool check_old_mc_block_id(vm::AugmentedDictionary& prev_blocks_dict, const ton:
   if (!blkid.id.is_masterchain_ext()) {
     return false;
   }
-  auto val = prev_blocks_dict.lookup(td::BitArray<32>{blkid.id.seqno});
-  block::gen::ExtBlkRef::Record data;
-  if (!(val.not_null() && val.write().advance(1) && ::tlb::csr_unpack(std::move(val), data) &&
-        data.seq_no == blkid.id.seqno)) {
-    return false;
-  }
-  return blkid.root_hash == data.root_hash && blkid.file_hash == data.file_hash;
+  ton::BlockIdExt old_blkid;
+  return unpack_old_mc_block_id(prev_blocks_dict.lookup(td::BitArray<32>{blkid.id.seqno}), blkid.id.seqno, old_blkid) &&
+         old_blkid == blkid;
 }
 
 td::Result<Ref<vm::Cell>> get_block_transaction(Ref<vm::Cell> block_root, ton::WorkchainId workchain,
