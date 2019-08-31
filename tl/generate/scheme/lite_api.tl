@@ -40,6 +40,11 @@ liteServer.transactionList ids:(vector tonNode.blockIdExt) transactions:bytes = 
 liteServer.transactionId mode:# account:mode.0?int256 lt:mode.1?long hash:mode.2?int256 = liteServer.TransactionId;
 liteServer.transactionId3 account:int256 lt:long = liteServer.TransactionId3;
 liteServer.blockTransactions id:tonNode.blockIdExt req_count:# incomplete:Bool ids:(vector liteServer.transactionId) proof:bytes = liteServer.BlockTransactions;
+liteServer.signature node_id_short:int256 signature:bytes = liteServer.Signature;
+liteServer.signatureSet validator_set_hash:int catchain_seqno:int signatures:(vector liteServer.signature) = liteServer.SignatureSet;
+liteServer.blockLinkBack to_key_block:Bool from:tonNode.blockIdExt to:tonNode.blockIdExt dest_proof:bytes shard_proof:bytes proof:bytes = liteServer.BlockLink;
+liteServer.blockLinkForward to_key_block:Bool from:tonNode.blockIdExt to:tonNode.blockIdExt dest_proof:bytes config_proof:bytes signatures:liteServer.signatureSet = liteServer.BlockLink;
+liteServer.partialBlockProof complete:Bool from:tonNode.blockIdExt to:tonNode.blockIdExt steps:(vector liteServer.BlockLink) = liteServer.PartialBlockProof;
 
 liteServer.debug.verbosity value:int = liteServer.debug.Verbosity;
 
@@ -58,7 +63,6 @@ liteServer.getOneTransaction id:tonNode.blockIdExt account:liteServer.accountId 
 liteServer.getTransactions count:# account:liteServer.accountId lt:long hash:int256 = liteServer.TransactionList;
 liteServer.lookupBlock mode:# id:tonNode.blockId lt:mode.1?long utime:mode.2?int = liteServer.BlockHeader;
 liteServer.listBlockTransactions id:tonNode.blockIdExt mode:# count:# after:mode.7?liteServer.transactionId3 reverse_order:mode.6?true want_proof:mode.5?true = liteServer.BlockTransactions;
-
-liteServer.debug.setVerbosity verbosity:liteServer.debug.verbosity = liteServer.debug.Verbosity;
+liteServer.getBlockProof mode:# known_block:tonNode.blockIdExt target_block:mode.0?tonNode.blockIdExt = liteServer.PartialBlockProof;
 
 liteServer.query data:bytes = Object;
