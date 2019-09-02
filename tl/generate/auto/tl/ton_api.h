@@ -4499,12 +4499,13 @@ class id_config_local final : public Object {
 class liteclient_config_global final : public Object {
  public:
   std::vector<object_ptr<liteserver_desc>> liteservers_;
+  object_ptr<validator_config_global> validator_;
 
   liteclient_config_global();
 
-  explicit liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_);
+  liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_, object_ptr<validator_config_global> &&validator_);
 
-  static const std::int32_t ID = -909718307;
+  static const std::int32_t ID = 143507704;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -6899,13 +6900,12 @@ class engine_validator_addAdnlId final : public Function {
  public:
   td::Bits256 key_hash_;
   std::int32_t category_;
-  std::int32_t priority_;
 
   engine_validator_addAdnlId();
 
-  engine_validator_addAdnlId(td::Bits256 const &key_hash_, std::int32_t category_, std::int32_t priority_);
+  engine_validator_addAdnlId(td::Bits256 const &key_hash_, std::int32_t category_);
 
-  static const std::int32_t ID = -473719263;
+  static const std::int32_t ID = -310029141;
   std::int32_t get_id() const final {
     return ID;
   }

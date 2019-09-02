@@ -65,6 +65,9 @@
       return send_error(s_addr, query_id, 0xee764f6f);
     }
   }
+  ;; if tag is non-zero and its higher bit is zero, throw an exception (the message is an unsupported query)
+  ;; to bounce message back to sender
+  throw_unless(37, (tag == 0) | (tag & (1 << 31)));
   ;; do nothing for other internal messages
 }
 

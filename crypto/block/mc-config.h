@@ -45,7 +45,6 @@ struct ValidatorDescr {
   }
   ValidatorDescr(const td::Bits256& _pubkey, td::uint64 _weight, td::uint64 _cum_weight, const td::Bits256& _adnl_addr)
       : pubkey(_pubkey), adnl_addr(_adnl_addr), weight(_weight), cum_weight(_cum_weight) {
-    adnl_addr.set_zero();
   }
   ValidatorDescr(const ton::Ed25519_PublicKey& _pubkey, td::uint64 _weight, td::uint64 _cum_weight)
       : pubkey(_pubkey), weight(_weight), cum_weight(_cum_weight) {

@@ -955,13 +955,15 @@ void interpret_fetch_ref(vm::Stack& stack, int mode) {
     }
   } else {
     auto cell = (mode & 2) ? cs.write().fetch_ref() : cs.write().prefetch_ref();
+    if (mode & 2) {
+      stack.push(std::move(cs));
+    }
     if (mode & 1) {
       Ref<vm::CellSlice> new_cs{true, vm::NoVm(), std::move(cell)};
       stack.push(std::move(new_cs));
     } else {
       stack.push_cell(std::move(cell));
     }
-    stack.push(std::move(cs));
     if (mode & 4) {
       stack.push_bool(true);
     }
@@ -1312,6 +1314,19 @@ void interpret_dict_to_slice(vm::Stack& stack) {
   vm::CellBuilder cb;
   cb.store_maybe_ref(stack.pop_maybe_cell());
   stack.push_cellslice(vm::load_cell_slice_ref(cb.finalize()));
+}
+
+void interpret_load_dict(vm::Stack& stack, bool fetch) {
+  auto cs = stack.pop_cellslice();
+  Ref<vm::Cell> dict;
+  bool non_empty;
+  if (!(cs.write().fetch_bool_to(non_empty) && (!non_empty || cs.write().fetch_ref_to(dict)))) {
+    throw IntError{"cell underflow"};
+  }
+  stack.push_maybe_cell(std::move(dict));
+  if (fetch) {
+    stack.push_cellslice(std::move(cs));
+  }
 }
 
 void interpret_store_dict(vm::Stack& stack) {
@@ -2481,6 +2496,8 @@ void init_words_common(Dictionary& d) {
   d.def_stack_word("dictnew ", interpret_dict_new);
   d.def_stack_word("dict>s ", interpret_dict_to_slice);
   d.def_stack_word("dict, ", interpret_store_dict);
+  d.def_stack_word("dict@ ", std::bind(interpret_load_dict, _1, false));
+  d.def_stack_word("dict@+ ", std::bind(interpret_load_dict, _1, true));
   d.def_stack_word("udict!+ ", std::bind(interpret_dict_add_u, _1, vm::Dictionary::SetMode::Add, false, false));
   d.def_stack_word("udict! ", std::bind(interpret_dict_add_u, _1, vm::Dictionary::SetMode::Set, false, false));
   d.def_stack_word("b>udict!+ ", std::bind(interpret_dict_add_u, _1, vm::Dictionary::SetMode::Add, true, false));

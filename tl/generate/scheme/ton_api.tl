@@ -456,7 +456,7 @@ validator.config.global zero_state:tonNode.blockIdExt init_block:tonNode.blockId
 config.global adnl:adnl.config.global dht:dht.config.global validator:validator.config.global = config.Global;
 
 liteserver.desc id:PublicKey ip:int port:int = liteserver.Desc;
-liteclient.config.global liteservers:(vector liteserver.desc) = liteclient.config.Global;
+liteclient.config.global liteservers:(vector liteserver.desc) validator:validator.config.global = liteclient.config.Global;
 
 engine.adnl id:int256 category:int = engine.Adnl;
 engine.addr ip:int port:int categories:(vector int) priority_categories:(vector int) = engine.Addr;
@@ -508,7 +508,7 @@ engine.validator.importPrivateKey key:PrivateKey = engine.validator.KeyHash;
 engine.validator.exportPrivateKey key_hash:int256 = PrivateKey;
 engine.validator.exportPublicKey key_hash:int256 = PublicKey;
 engine.validator.generateKeyPair = engine.validator.KeyHash;
-engine.validator.addAdnlId key_hash:int256 category:int priority:int = engine.validator.Success;
+engine.validator.addAdnlId key_hash:int256 category:int = engine.validator.Success;
 engine.validator.addDhtId key_hash:int256 = engine.validator.Success;
 engine.validator.addValidatorPermanentKey key_hash:int256 ttl:int = engine.validator.Success;
 engine.validator.addValidatorTempKey permanent_key_hash:int256 key_hash:int256 ttl:int = engine.validator.Success;

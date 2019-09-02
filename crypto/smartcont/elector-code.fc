@@ -62,11 +62,11 @@ cell pack_elect(elect_at, elect_close, min_stake, total_stake, members, failed, 
 }
 
 () return_stake(addr, query_id, reason) impure {
-  return send_message_back(addr, 0x6e6f454c, query_id, reason, 0, 64);
+  return send_message_back(addr, 0xee6f454c, query_id, reason, 0, 64);
 }
 
 () send_confirmation(addr, query_id, comment) impure {
-  return send_message_back(addr, 0x7374484c, query_id, comment, 1000000000, 3);
+  return send_message_back(addr, 0xf374484c, query_id, comment, 1000000000, 3);
 }
 
 () send_validator_set_to_config(config_addr, vset, query_id) impure {

@@ -1565,10 +1565,6 @@ int main(int argc, char* argv[]) {
     td::actor::send_closure(x, &TestNode::set_global_config, fname.str());
     return td::Status::OK();
   });
-  p.add_option('c', "local-config", "file to read local config", [&](td::Slice fname) {
-    td::actor::send_closure(x, &TestNode::set_local_config, fname.str());
-    return td::Status::OK();
-  });
   p.add_option('r', "disable-readline", "", [&]() {
     td::actor::send_closure(x, &TestNode::set_readline_enabled, false);
     return td::Status::OK();

@@ -80,10 +80,14 @@ library TonUtil // TON Blockchain Fift Library
 nip -trailing0 } : (.GR)
 { (.GR) ."GR$" type space } : .GR
 
-// b x --> b'  ( serializes a Gram amount )
+// b x -- b'  ( serializes a Gram amount )
 { -1 { 1+ 2dup 8 * ufits } until
   rot over 4 u, -rot 8 * u, } : Gram,
-  
+// s -- x s'  ( deserializes a Gram amount )
+{ 4 u@+ swap 8 * u@+ } : Gram@+
+// s -- x
+{ 4 u@+ swap 8 * u@ } : Gram@
+
 // currency collections
 // b x --> b'  ( serializes a VarUInteger32 )
 { -1 { 1+ 2dup 8 * ufits } until

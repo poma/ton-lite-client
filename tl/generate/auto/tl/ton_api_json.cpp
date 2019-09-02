@@ -637,7 +637,7 @@ Result<int32> tl_constructor_from_string(ton_api::Object *object, const std::str
     {"fec.roundRobin", 854927588},
     {"fec.online", 19359244},
     {"id.config.local", -1834367090},
-    {"liteclient.config.global", -909718307},
+    {"liteclient.config.global", 143507704},
     {"liteserver.desc", -1001806732},
     {"liteserver.config.local", 1182002063},
     {"liteserver.config.random.local", 2093565243},
@@ -737,7 +737,7 @@ Result<int32> tl_constructor_from_string(ton_api::Function *object, const std::s
     {"dht.ping", -873775336},
     {"dht.query", 2102593385},
     {"dht.store", 882065938},
-    {"engine.validator.addAdnlId", -473719263},
+    {"engine.validator.addAdnlId", -310029141},
     {"engine.validator.addControlInterface", 881587196},
     {"engine.validator.addControlProcess", 1524692816},
     {"engine.validator.addDhtId", -183755124},
@@ -3246,6 +3246,12 @@ Status from_json(ton_api::liteclient_config_global &to, JsonObject &from) {
       TRY_STATUS(from_json(to.liteservers_, value));
     }
   }
+  {
+    TRY_RESULT(value, get_json_object_field(from, "validator", JsonValue::Type::Null, true));
+    if (value.type() != JsonValue::Type::Null) {
+      TRY_STATUS(from_json(to.validator_, value));
+    }
+  }
   return Status::OK();
 }
 Status from_json(ton_api::liteserver_desc &to, JsonObject &from) {
@@ -4735,12 +4741,6 @@ Status from_json(ton_api::engine_validator_addAdnlId &to, JsonObject &from) {
     TRY_RESULT(value, get_json_object_field(from, "category", JsonValue::Type::Null, true));
     if (value.type() != JsonValue::Type::Null) {
       TRY_STATUS(from_json(to.category_, value));
-    }
-  }
-  {
-    TRY_RESULT(value, get_json_object_field(from, "priority", JsonValue::Type::Null, true));
-    if (value.type() != JsonValue::Type::Null) {
-      TRY_STATUS(from_json(to.priority_, value));
     }
   }
   return Status::OK();
@@ -6521,6 +6521,9 @@ void to_json(JsonValueScope &jv, const ton_api::liteclient_config_global &object
   auto jo = jv.enter_object();
   jo << ctie("@type", "liteclient.config.global");
   jo << ctie("liteservers", ToJson(object.liteservers_));
+  if (object.validator_) {
+    jo << ctie("validator", ToJson(object.validator_));
+  }
 }
 void to_json(JsonValueScope &jv, const ton_api::liteserver_desc &object) {
   auto jo = jv.enter_object();
@@ -7187,7 +7190,6 @@ void to_json(JsonValueScope &jv, const ton_api::engine_validator_addAdnlId &obje
   jo << ctie("@type", "engine.validator.addAdnlId");
   jo << ctie("key_hash", ToJson(object.key_hash_));
   jo << ctie("category", ToJson(object.category_));
-  jo << ctie("priority", ToJson(object.priority_));
 }
 void to_json(JsonValueScope &jv, const ton_api::engine_validator_addControlInterface &object) {
   auto jo = jv.enter_object();

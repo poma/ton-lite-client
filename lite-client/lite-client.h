@@ -28,7 +28,6 @@ using td::Ref;
 
 class TestNode : public td::actor::Actor {
  private:
-  std::string local_config_ = "ton-local.config";
   std::string global_config_ = "ton-global.config";
 
   td::actor::ActorOwn<ton::adnl::AdnlExtClient> client_;
@@ -149,9 +148,6 @@ class TestNode : public td::actor::Actor {
   }
   void conn_closed() {
     ready_ = false;
-  }
-  void set_local_config(std::string str) {
-    local_config_ = str;
   }
   void set_global_config(std::string str) {
     global_config_ = str;
