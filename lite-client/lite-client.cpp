@@ -108,29 +108,44 @@ void TestNode::run() {
       ton::adnl::AdnlExtClient::create(ton::adnl::AdnlNodeIdFull{remote_public_key_}, remote_addr_, make_callback());
 }
 
+void TestNode::got_result() {
+  running_queries_--;
+  if (!running_queries_ && ex_queries_.size() > 0) {
+    auto data = std::move(ex_queries_[0]);
+    ex_queries_.erase(ex_queries_.begin());
+    parse_line(std::move(data));
+  }
+  if (ex_mode_ && !running_queries_ && ex_queries_.size() == 0) {
+    std::_Exit(0);
+  }
+}
+
 bool TestNode::envelope_send_query(td::BufferSlice query, td::Promise<td::BufferSlice> promise) {
+  running_queries_++;
   if (!ready_ || client_.empty()) {
     LOG(ERROR) << "failed to send query to server: not ready";
     return false;
   }
-  auto P = td::PromiseCreator::lambda([promise = std::move(promise)](td::Result<td::BufferSlice> R) mutable {
-    if (R.is_error()) {
-      auto err = R.move_as_error();
-      LOG(ERROR) << "failed query: " << err;
-      promise.set_error(std::move(err));
-      return;
-    }
-    auto data = R.move_as_ok();
-    auto F = ton::fetch_tl_object<ton::lite_api::liteServer_error>(data.clone(), true);
-    if (F.is_ok()) {
-      auto f = F.move_as_ok();
-      auto err = td::Status::Error(f->code_, f->message_);
-      LOG(ERROR) << "received error: " << err;
-      promise.set_error(std::move(err));
-      return;
-    }
-    promise.set_result(std::move(data));
-  });
+  auto P = td::PromiseCreator::lambda(
+      [ SelfId = actor_id(this), promise = std::move(promise) ](td::Result<td::BufferSlice> R) mutable {
+        if (R.is_error()) {
+          auto err = R.move_as_error();
+          LOG(ERROR) << "failed query: " << err;
+          promise.set_error(std::move(err));
+          return;
+        }
+        auto data = R.move_as_ok();
+        auto F = ton::fetch_tl_object<ton::lite_api::liteServer_error>(data.clone(), true);
+        if (F.is_ok()) {
+          auto f = F.move_as_ok();
+          auto err = td::Status::Error(f->code_, f->message_);
+          LOG(ERROR) << "received error: " << err;
+          promise.set_error(std::move(err));
+          return;
+        }
+        promise.set_result(std::move(data));
+        td::actor::send_closure(SelfId, &TestNode::got_result);
+      });
   td::BufferSlice b =
       ton::serialize_tl_object(ton::create_tl_object<ton::lite_api::liteServer_query>(std::move(query)), true);
   td::actor::send_closure(client_, &ton::adnl::AdnlExtClient::send_query, "query", std::move(b),
@@ -182,7 +197,7 @@ bool TestNode::complete_blkid(ton::BlockId partial_blkid, ton::BlockIdExt& compl
 
 bool TestNode::get_server_time() {
   auto b = ton::serialize_tl_object(ton::create_tl_object<ton::lite_api::liteServer_getTime>(), true);
-  return envelope_send_query(std::move(b), [&, Self = actor_id(this)](td::Result<td::BufferSlice> res) -> void {
+  return envelope_send_query(std::move(b), [&, Self = actor_id(this) ](td::Result<td::BufferSlice> res)->void {
     if (res.is_error()) {
       LOG(ERROR) << "cannot get server time";
       return;
@@ -201,7 +216,7 @@ bool TestNode::get_server_time() {
 
 bool TestNode::get_server_mc_block_id() {
   auto b = ton::serialize_tl_object(ton::create_tl_object<ton::lite_api::liteServer_getMasterchainInfo>(), true);
-  return envelope_send_query(std::move(b), [Self = actor_id(this)](td::Result<td::BufferSlice> res) -> void {
+  return envelope_send_query(std::move(b), [Self = actor_id(this)](td::Result<td::BufferSlice> res)->void {
     if (res.is_error()) {
       LOG(ERROR) << "cannot get masterchain info from server";
       return;
@@ -244,7 +259,7 @@ void TestNode::got_server_mc_block_id(ton::BlockIdExt blkid, ton::ZeroStateIdExt
 bool TestNode::request_block(ton::BlockIdExt blkid) {
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getBlock>(ton::create_tl_lite_block_id(blkid)), true);
-  return envelope_send_query(std::move(b), [Self = actor_id(this), blkid](td::Result<td::BufferSlice> res) -> void {
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), blkid ](td::Result<td::BufferSlice> res)->void {
     if (res.is_error()) {
       LOG(ERROR) << "cannot obtain block " << blkid.to_str() << " from server";
       return;
@@ -269,7 +284,7 @@ bool TestNode::request_block(ton::BlockIdExt blkid) {
 bool TestNode::request_state(ton::BlockIdExt blkid) {
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getState>(ton::create_tl_lite_block_id(blkid)), true);
-  return envelope_send_query(std::move(b), [Self = actor_id(this), blkid](td::Result<td::BufferSlice> res) -> void {
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), blkid ](td::Result<td::BufferSlice> res)->void {
     if (res.is_error()) {
       LOG(ERROR) << "cannot obtain state " << blkid.to_str() << " from server";
       return;
@@ -371,6 +386,11 @@ std::string TestNode::get_word(char delim) {
   }
   std::swap(ptr, parse_ptr_);
   return std::string{ptr, parse_ptr_};
+}
+
+bool TestNode::get_word_to(std::string& str, char delim) {
+  str = get_word(delim);
+  return !str.empty();
 }
 
 int TestNode::skipspc() {
@@ -627,8 +647,15 @@ bool TestNode::show_help(std::string command) {
          "status\tShow connection and local database status\n"
          "getaccount <addr> [<block-id-ext>]\tLoads the most recent state of specified account; <addr> is in "
          "[<workchain>:]<hex-or-base64-addr> format\n"
+         "saveaccount[code|data] <filename> <addr> [<block-id-ext>]\tSaves into specified file the most recent state "
+         "(StateInit) or just the code or data of specified account; <addr> is in "
+         "[<workchain>:]<hex-or-base64-addr> format\n"
          "allshards [<block-id-ext>]\tShows shard configuration from the most recent masterchain "
          "state or from masterchain state corresponding to <block-id-ext>\n"
+         "getconfig [<param>...]\tShows specified or all configuration parameters from the latest masterchain state\n"
+         "getconfigfrom <block-id-ext> [<param>...]\tShows specified or all configuration parameters from the "
+         "masterchain state of <block-id-ext>\n"
+         "saveconfig <filename> [<block-id-ext>]\tSaves all configuration parameters into specified file\n"
          "gethead <block-id-ext>\tShows block header for <block-id-ext>\n"
          "getblock <block-id-ext>\tDownloads block\n"
          "dumpblock <block-id-ext>\tDownloads and dumps specified block\n"
@@ -675,8 +702,23 @@ bool TestNode::do_parse_line() {
     return parse_account_addr(workchain, addr) &&
            (seekeoln() ? get_account_state(workchain, addr, mc_last_id_)
                        : parse_block_id_ext(blkid) && seekeoln() && get_account_state(workchain, addr, blkid));
+  } else if (word == "saveaccount" || word == "saveaccountcode" || word == "saveaccountdata") {
+    std::string filename;
+    int mode = ((word.c_str()[11] >> 1) & 3);
+    return get_word_to(filename) && parse_account_addr(workchain, addr) &&
+           (seekeoln()
+                ? get_account_state(workchain, addr, mc_last_id_, filename, mode)
+                : parse_block_id_ext(blkid) && seekeoln() && get_account_state(workchain, addr, blkid, filename, mode));
   } else if (word == "allshards") {
     return eoln() ? get_all_shards() : (parse_block_id_ext(blkid) && seekeoln() && get_all_shards(false, blkid));
+  } else if (word == "saveconfig") {
+    blkid = mc_last_id_;
+    std::string filename;
+    return get_word_to(filename) && (seekeoln() || parse_block_id_ext(blkid)) && seekeoln() &&
+           get_config_params(blkid, -1, filename);
+  } else if (word == "getconfig" || word == "getconfigfrom") {
+    blkid = mc_last_id_;
+    return (word == "getconfig" || parse_block_id_ext(blkid)) && get_config_params(blkid, 0);
   } else if (word == "getblock") {
     return parse_block_id_ext(blkid) && seekeoln() && get_block(blkid, false);
   } else if (word == "dumpblock") {
@@ -763,7 +805,8 @@ td::Status TestNode::send_ext_msg_from_filename(std::string filename) {
   }
 }
 
-bool TestNode::get_account_state(ton::WorkchainId workchain, ton::StdSmcAddress addr, ton::BlockIdExt ref_blkid) {
+bool TestNode::get_account_state(ton::WorkchainId workchain, ton::StdSmcAddress addr, ton::BlockIdExt ref_blkid,
+                                 std::string filename, int mode) {
   if (!ref_blkid.is_valid()) {
     return set_error("must obtain last block information before making other queries");
   }
@@ -775,22 +818,22 @@ bool TestNode::get_account_state(ton::WorkchainId workchain, ton::StdSmcAddress 
                                         ton::create_tl_lite_block_id(ref_blkid), std::move(a)),
                                     true);
   LOG(INFO) << "requesting account state for " << workchain << ":" << addr.to_hex() << " with respect to "
-            << ref_blkid.to_str();
-  return envelope_send_query(
-      std::move(b), [Self = actor_id(this), workchain, addr, ref_blkid](td::Result<td::BufferSlice> R) -> void {
-        if (R.is_error()) {
-          return;
-        }
-        auto F = ton::fetch_tl_object<ton::lite_api::liteServer_accountState>(R.move_as_ok(), true);
-        if (F.is_error()) {
-          LOG(ERROR) << "cannot parse answer to liteServer.getAccountState";
-        } else {
-          auto f = F.move_as_ok();
-          td::actor::send_closure_later(Self, &TestNode::got_account_state, ref_blkid, ton::create_block_id(f->id_),
-                                        ton::create_block_id(f->shardblk_), std::move(f->shard_proof_),
-                                        std::move(f->proof_), std::move(f->state_), workchain, addr);
-        }
-      });
+            << ref_blkid.to_str() << " with savefile `" << filename << "` and mode " << mode;
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), workchain, addr, ref_blkid, filename,
+                                             mode ](td::Result<td::BufferSlice> R) {
+    if (R.is_error()) {
+      return;
+    }
+    auto F = ton::fetch_tl_object<ton::lite_api::liteServer_accountState>(R.move_as_ok(), true);
+    if (F.is_error()) {
+      LOG(ERROR) << "cannot parse answer to liteServer.getAccountState";
+    } else {
+      auto f = F.move_as_ok();
+      td::actor::send_closure_later(Self, &TestNode::got_account_state, ref_blkid, ton::create_block_id(f->id_),
+                                    ton::create_block_id(f->shardblk_), std::move(f->shard_proof_),
+                                    std::move(f->proof_), std::move(f->state_), workchain, addr, filename, mode);
+    }
+  });
 }
 
 bool TestNode::get_one_transaction(ton::BlockIdExt blkid, ton::WorkchainId workchain, ton::StdSmcAddress addr,
@@ -811,7 +854,7 @@ bool TestNode::get_one_transaction(ton::BlockIdExt blkid, ton::WorkchainId workc
   LOG(INFO) << "requesting transaction " << lt << " of " << workchain << ":" << addr.to_hex() << " from block "
             << blkid.to_str();
   return envelope_send_query(
-      std::move(b), [Self = actor_id(this), workchain, addr, lt, blkid, dump](td::Result<td::BufferSlice> R) -> void {
+      std::move(b), [ Self = actor_id(this), workchain, addr, lt, blkid, dump ](td::Result<td::BufferSlice> R)->void {
         if (R.is_error()) {
           return;
         }
@@ -837,7 +880,7 @@ bool TestNode::get_last_transactions(ton::WorkchainId workchain, ton::StdSmcAddr
   LOG(INFO) << "requesting " << count << " last transactions from " << lt << ":" << hash.to_hex() << " of " << workchain
             << ":" << addr.to_hex();
   return envelope_send_query(
-      std::move(b), [Self = actor_id(this), workchain, addr, lt, hash, count, dump](td::Result<td::BufferSlice> R) {
+      std::move(b), [ Self = actor_id(this), workchain, addr, lt, hash, count, dump ](td::Result<td::BufferSlice> R) {
         if (R.is_error()) {
           return;
         }
@@ -858,7 +901,7 @@ bool TestNode::get_last_transactions(ton::WorkchainId workchain, ton::StdSmcAddr
 
 void TestNode::got_account_state(ton::BlockIdExt ref_blk, ton::BlockIdExt blk, ton::BlockIdExt shard_blk,
                                  td::BufferSlice shard_proof, td::BufferSlice proof, td::BufferSlice state,
-                                 ton::WorkchainId workchain, ton::StdSmcAddress addr) {
+                                 ton::WorkchainId workchain, ton::StdSmcAddress addr, std::string filename, int mode) {
   LOG(INFO) << "got account state for " << workchain << ":" << addr.to_hex() << " with respect to blocks "
             << blk.to_str() << (shard_blk == blk ? "" : std::string{" and "} + shard_blk.to_str());
   block::AccountState account_state;
@@ -874,15 +917,72 @@ void TestNode::got_account_state(ton::BlockIdExt ref_blk, ton::BlockIdExt blk, t
   }
   auto out = td::TerminalIO::out();
   auto info = r_info.move_as_ok();
-  if (info.root.not_null()) {
-    out << "account state is ";
-    std::ostringstream outp;
-    block::gen::t_Account.print_ref(outp, info.root);
-    vm::load_cell_slice(info.root).print_rec(outp);
-    out << outp.str();
-    out << "last transaction lt = " << info.last_trans_lt << " hash = " << info.last_trans_hash.to_hex() << std::endl;
+  if (mode < 0) {
+    if (info.root.not_null()) {
+      out << "account state is ";
+      std::ostringstream outp;
+      block::gen::t_Account.print_ref(outp, info.root);
+      vm::load_cell_slice(info.root).print_rec(outp);
+      out << outp.str();
+      out << "last transaction lt = " << info.last_trans_lt << " hash = " << info.last_trans_hash.to_hex() << std::endl;
+    } else {
+      out << "account state is empty" << std::endl;
+    }
+  } else if (info.root.not_null()) {
+    block::gen::Account::Record_account acc;
+    block::gen::AccountStorage::Record store;
+    if (!(tlb::unpack_cell(info.root, acc) && tlb::csr_unpack(acc.storage, store))) {
+      LOG(ERROR) << "error unpacking account state";
+      return;
+    }
+    int tag = block::gen::t_AccountState.get_tag(*store.state);
+    switch (tag) {
+      case block::gen::AccountState::account_uninit:
+        out << "account frozen (no StateInit to save into file)" << std::endl;
+        return;
+      case block::gen::AccountState::account_frozen:
+        out << "account frozen (no StateInit to save into file)" << std::endl;
+        return;
+    }
+    CHECK(store.state.write().fetch_ulong(1) == 1);  // account_init$1 _:StateInit = AccountState;
+    block::gen::StateInit::Record state;
+    CHECK(tlb::csr_unpack(store.state, state));
+    Ref<vm::Cell> cell;
+    const char* name = "<unknown-information>";
+    if (mode == 0) {
+      // save all state
+      vm::CellBuilder cb;
+      CHECK(cb.append_cellslice_bool(store.state) && cb.finalize_to(cell));
+      name = "StateInit";
+    } else if (mode == 1) {
+      // save code
+      cell = state.code->prefetch_ref();
+      name = "code";
+    } else if (mode == 2) {
+      // save data
+      cell = state.data->prefetch_ref();
+      name = "data";
+    }
+    if (cell.is_null()) {
+      out << "no " << name << " to save to file" << std::endl;
+      return;
+    }
+    auto res = vm::std_boc_serialize(std::move(cell), 2);
+    if (res.is_error()) {
+      LOG(ERROR) << "cannot serialize extracted information from account state : " << res.move_as_error();
+      return;
+    }
+    auto len = res.ok().size();
+    auto res1 = td::write_file(filename, res.move_as_ok());
+    if (res1.is_error()) {
+      LOG(ERROR) << "cannot write " << name << " of account " << workchain << ":" << addr.to_hex() << " to file `"
+                 << filename << "` : " << res1.move_as_error();
+      return;
+    }
+    out << "written " << name << " of account " << workchain << ":" << addr.to_hex() << " to file `" << filename
+        << "` (" << len << " bytes)" << std::endl;
   } else {
-    out << "account state is empty" << std::endl;
+    out << "account state is empty (nothing saved to file `" << filename << "`)" << std::endl;
   }
 }
 
@@ -1143,7 +1243,7 @@ bool TestNode::get_block_transactions(ton::BlockIdExt blkid, int mode, unsigned 
                                     true);
   LOG(INFO) << "requesting " << count << " transactions from block " << blkid.to_str() << " starting from account "
             << acc_addr.to_hex() << " lt " << lt;
-  return envelope_send_query(std::move(b), [Self = actor_id(this), mode](td::Result<td::BufferSlice> R) {
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), mode ](td::Result<td::BufferSlice> R) {
     if (R.is_error()) {
       return;
     }
@@ -1191,7 +1291,7 @@ bool TestNode::get_all_shards(bool use_last, ton::BlockIdExt blkid) {
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getAllShardsInfo>(ton::create_tl_lite_block_id(blkid)), true);
   LOG(INFO) << "requesting recent shard configuration";
-  return envelope_send_query(std::move(b), [Self = actor_id(this)](td::Result<td::BufferSlice> R) -> void {
+  return envelope_send_query(std::move(b), [Self = actor_id(this)](td::Result<td::BufferSlice> R)->void {
     if (R.is_error()) {
       return;
     }
@@ -1244,12 +1344,133 @@ void TestNode::got_all_shards(ton::BlockIdExt blk, td::BufferSlice proof, td::Bu
   show_new_blkids();
 }
 
+bool TestNode::get_config_params(ton::BlockIdExt blkid, int mode, std::string filename) {
+  std::vector<int> params;
+  if (mode >= 0 && !seekeoln()) {
+    mode |= 0x1000;
+    while (!seekeoln()) {
+      int x;
+      if (!convert_int32(get_word(), x)) {
+        return set_error("integer configuration parameter id expected");
+      }
+      params.push_back(x);
+    }
+  }
+  if (!(ready_ && !client_.empty())) {
+    return set_error("server connection not ready");
+  }
+  if (!blkid.is_masterchain_ext()) {
+    return set_error("only masterchain blocks contain configuration");
+  }
+  auto params_copy = params;
+  auto b = (mode & 0x3000) == 0x1000
+               ? ton::serialize_tl_object(ton::create_tl_object<ton::lite_api::liteServer_getConfigParams>(
+                                              0, ton::create_tl_lite_block_id(blkid), std::move(params_copy)),
+                                          true)
+               : ton::serialize_tl_object(ton::create_tl_object<ton::lite_api::liteServer_getConfigAll>(
+                                              0, ton::create_tl_lite_block_id(blkid)),
+                                          true);
+  LOG(INFO) << "requesting " << params.size() << " configuration parameters with respect to masterchain block "
+            << blkid.to_str();
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), mode, filename,
+                                             params = std::move(params) ](td::Result<td::BufferSlice> R) mutable {
+    if (R.is_error()) {
+      return;
+    }
+    auto F = ton::fetch_tl_object<ton::lite_api::liteServer_configInfo>(R.move_as_ok(), true);
+    if (F.is_error()) {
+      LOG(ERROR) << "cannot parse answer to liteServer.getConfigParams";
+    } else {
+      auto f = F.move_as_ok();
+      td::actor::send_closure_later(Self, &TestNode::got_config_params, ton::create_block_id(f->id_),
+                                    std::move(f->state_proof_), std::move(f->config_proof_), mode, filename,
+                                    std::move(params));
+    }
+  });
+}
+
+void TestNode::got_config_params(ton::BlockIdExt blkid, td::BufferSlice state_proof, td::BufferSlice cfg_proof,
+                                 int mode, std::string filename, std::vector<int> params) {
+  LOG(INFO) << "got configuration parameters";
+  if (!blkid.is_masterchain_ext()) {
+    LOG(ERROR) << "reference block " << blkid.to_str() << " for the configuration is not a valid masterchain block";
+    return;
+  }
+  auto R = block::check_extract_state_proof(blkid, state_proof.as_slice(), cfg_proof.as_slice());
+  if (R.is_error()) {
+    LOG(ERROR) << "masterchain state proof for " << blkid.to_str() << " is invalid : " << R.move_as_error().to_string();
+    return;
+  }
+  try {
+    auto res = block::Config::extract_from_state(R.move_as_ok(), mode >= 0 ? mode & 0xfff : 0);
+    if (res.is_error()) {
+      LOG(ERROR) << "cannot unpack configuration: " << res.move_as_error().to_string();
+      return;
+    }
+    auto config = res.move_as_ok();
+    if (mode < 0) {
+      auto F = vm::std_boc_serialize(config->get_root_cell(), 2);
+      if (F.is_error()) {
+        LOG(ERROR) << "cannot serialize configuration: " << F.move_as_error().to_string();
+        return;
+      }
+      auto size = F.ok().size();
+      auto W = td::write_file(filename, F.move_as_ok());
+      if (W.is_error()) {
+        LOG(ERROR) << "cannot save file `" << filename << "` : " << W.move_as_error().to_string();
+        return;
+      }
+      td::TerminalIO::out() << "saved configuration dictionary into file `" << filename << "` (" << size
+                            << " bytes written)" << std::endl;
+      return;
+    }
+    auto out = td::TerminalIO::out();
+    if (mode & 0x1000) {
+      for (int i : params) {
+        out << "ConfigParam(" << i << ") = ";
+        auto value = config->get_config_param(i);
+        if (value.is_null()) {
+          out << "(null)\n";
+        } else {
+          std::ostringstream os;
+          if (i >= 0) {
+            block::gen::ConfigParam{i}.print_ref(os, value);
+            os << std::endl;
+          }
+          vm::load_cell_slice(value).print_rec(os);
+          out << os.str() << std::endl;
+        }
+      }
+    } else {
+      config->foreach_config_param([&out](int i, Ref<vm::Cell> value) {
+        out << "ConfigParam(" << i << ") = ";
+        if (value.is_null()) {
+          out << "(null)\n";
+        } else {
+          std::ostringstream os;
+          if (i >= 0) {
+            block::gen::ConfigParam{i}.print_ref(os, value);
+            os << std::endl;
+          }
+          vm::load_cell_slice(value).print_rec(os);
+          out << os.str() << std::endl;
+        }
+        return true;
+      });
+    }
+  } catch (vm::VmError& err) {
+    LOG(ERROR) << "error while traversing configuration: " << err.get_msg();
+  } catch (vm::VmVirtError& err) {
+    LOG(ERROR) << "virtualization error while traversing configuration: " << err.get_msg();
+  }
+}
+
 bool TestNode::get_block(ton::BlockIdExt blkid, bool dump) {
   LOG(INFO) << "got block download request for " << blkid.to_str();
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getBlock>(ton::create_tl_lite_block_id(blkid)), true);
   return envelope_send_query(
-      std::move(b), [Self = actor_id(this), blkid, dump](td::Result<td::BufferSlice> res) -> void {
+      std::move(b), [ Self = actor_id(this), blkid, dump ](td::Result<td::BufferSlice> res)->void {
         if (res.is_error()) {
           LOG(ERROR) << "cannot obtain block " << blkid.to_str()
                      << " from server : " << res.move_as_error().to_string();
@@ -1278,7 +1499,7 @@ bool TestNode::get_state(ton::BlockIdExt blkid, bool dump) {
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getState>(ton::create_tl_lite_block_id(blkid)), true);
   return envelope_send_query(
-      std::move(b), [Self = actor_id(this), blkid, dump](td::Result<td::BufferSlice> res) -> void {
+      std::move(b), [ Self = actor_id(this), blkid, dump ](td::Result<td::BufferSlice> res)->void {
         if (res.is_error()) {
           LOG(ERROR) << "cannot obtain state " << blkid.to_str()
                      << " from server : " << res.move_as_error().to_string();
@@ -1418,7 +1639,7 @@ bool TestNode::get_block_header(ton::BlockIdExt blkid, int mode) {
   LOG(INFO) << "got block header request for " << blkid.to_str() << " with mode " << mode;
   auto b = ton::serialize_tl_object(
       ton::create_tl_object<ton::lite_api::liteServer_getBlockHeader>(ton::create_tl_lite_block_id(blkid), mode), true);
-  return envelope_send_query(std::move(b), [Self = actor_id(this), blkid](td::Result<td::BufferSlice> res) -> void {
+  return envelope_send_query(std::move(b), [ Self = actor_id(this), blkid ](td::Result<td::BufferSlice> res)->void {
     if (res.is_error()) {
       LOG(ERROR) << "cannot obtain block header for " << blkid.to_str()
                  << " from server : " << res.move_as_error().to_string();
@@ -1449,7 +1670,7 @@ bool TestNode::lookup_block(ton::ShardIdFull shard, int mode, td::uint64 arg) {
                                         mode, ton::create_tl_lite_block_id_simple(id), arg, (td::uint32)arg),
                                     true);
   return envelope_send_query(
-      std::move(b), [Self = actor_id(this), id, mode, arg](td::Result<td::BufferSlice> res) -> void {
+      std::move(b), [ Self = actor_id(this), id, mode, arg ](td::Result<td::BufferSlice> res)->void {
         if (res.is_error()) {
           LOG(ERROR) << "cannot look up block header for " << id.to_str() << " with mode " << mode << " and argument "
                      << arg << " from server : " << res.move_as_error().to_string();
@@ -1593,17 +1814,28 @@ int main(int argc, char* argv[]) {
     td::actor::send_closure(x, &TestNode::set_remote_addr, addr);
     return td::Status::OK();
   });
+  p.add_option('c', "cmd", "schedule command", [&](td::Slice arg) {
+    td::actor::send_closure(x, &TestNode::add_cmd, td::BufferSlice{arg});
+    return td::Status::OK();
+  });
+  p.add_option('t', "timeout", "timeout in batch mode", [&](td::Slice arg) {
+    auto d = td::to_double(arg);
+    td::actor::send_closure(x, &TestNode::set_fail_timeout, td::Timestamp::in(d));
+    return td::Status::OK();
+  });
   p.add_option('p', "pub", "remote public key", [&](td::Slice arg) {
     td::actor::send_closure(x, &TestNode::set_public_key, td::BufferSlice{arg});
     return td::Status::OK();
   });
   p.add_option('d', "daemonize", "set SIGHUP", [&]() {
-    td::set_signal_handler(td::SignalType::HangUp, [](int sig) {
+    td::set_signal_handler(td::SignalType::HangUp,
+                           [](int sig) {
 #if TD_DARWIN || TD_LINUX
-      close(0);
-      setsid();
+                             close(0);
+                             setsid();
 #endif
-    }).ensure();
+                           })
+        .ensure();
     return td::Status::OK();
   });
 #if TD_DARWIN || TD_LINUX

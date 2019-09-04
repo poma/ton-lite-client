@@ -108,6 +108,7 @@ One such tool is the Fift interpreter, which is included in this distribution an
 Create the file `new-wallet.fif` containing the source of our new smart contract:
 
 ------------------------------------
+#!/usr/bin/fift -s
 "Asm.fif" include
 
 0 constant wc  // create a wallet in workchain 0 (basechain)
@@ -154,13 +155,19 @@ dup ."External message for initialization is " <s csr. cr
 ."(Saved to file " type .")" cr
 --------------------------------------------
 
-Incidentally, you can find a more sophisticated version of this sample file in crypto/smartcont/new-wallet.fif.
+Incidentally, you can find a more sophisticated version of this sample file in crypto/smartcont/new-wallet.fif. It accepts command-line arguments, so you don't need to edit the source file each time you want to create a new wallet.
 
 Now, provided that you have compiled Fift binary (usually located as "crypto/fift" with respect to the build directory), you can run
 
 crypto/fift -I<source-directory>/crypto/fift/lib new-wallet.fif
 
-assuming that you have copied new-wallet.fif into the current directory. You may wish to set the FIFTPATH environment variable to <source-directory>/crypto/fift/lib, the directory containing Fift.fif and Asm.fif library files; then you can omit the -I argument to the Fift interpreter.
+assuming that you have copied new-wallet.fif into the current directory. Alternatively, you might skip the source editing phase and simply run
+
+crypto/fift -I<source-directory>/crypto/fift/lib -s <source-directory>/smartcont/new-wallet.fif 0 my_wallet_name
+
+where 0 is the workchain to contain the new wallet (0 = basechain, -1 = masterchain), `my_wallet_name` is any identifier you wish to be associated with this wallet. The address of the new wallet will be saved into file `my_wallet_name.addr`, its newly-generated private key will be saved to `my_wallet_name.pk` (unless this file already exists; then the key will be loaded from this file instead), and the external message will be saved into my_new_wallet-query.boc. If you do not indicate the name of your wallet (`my_wallet_name` in the example above), the default name `new-wallet` is used.
+
+You may wish to set the FIFTPATH environment variable to <source-directory>/crypto/fift/lib, the directory containing Fift.fif and Asm.fif library files; then you can omit the -I argument to the Fift interpreter.
 
 If everything worked, you'll see something like the following
 
@@ -194,6 +201,12 @@ You might try to upload the new smart contract immediately by running the Lite C
 
 > sendfile new-wallet-query.boc
 
+or
+
+> sendfile my_new_wallet-query.boc
+
+if you chose to name your wallet `my_new_wallet`.
+
 Unfortunately, this won't work, because smart contracts must have a positive balance to be able to pay for storing and processing their data in the blockchain. So you have to transfer some funds to your new smart contract address first, displayed during its generation as -1:60c0...c0d0 (in raw form) and 0f9..EKD (in user-friendly form).
 
 In a real scenario, you would either transfer some Grams from your already existing wallet, ask a friend to do so, or buy some Grams at a cryptocurrency exchange, indicating 0f9...EKD as the account to transfer the new Grams to.
@@ -210,7 +223,7 @@ You need to know the address of the test giver smart contract. We'll assume that
 
 as explained above in Section 2. The only number you need from the output is the 32-bit sequence number stored in the smart contract data (it is zero in the example above, but generally it will be non-zero).
 
-Next, you create an external message to the test giver asking it to send another message to your (uninitialized) smart contract carrying a specified amount of test Grams. There is a special Fift source file for generating this external message, located at crypto/smartcont/testgiver.fif:
+Next, you create an external message to the test giver asking it to send another message to your (uninitialized) smart contract carrying a specified amount of test Grams. There is a special Fift source file for generating this external message, a more sophisticated version of which is located at crypto/smartcont/testgiver.fif:
 
 --------------------------------------------
 // "testgiver.addr" file>B 256 B>u@ 
@@ -243,7 +256,17 @@ dup ."resulting external message: " <s csr. cr
 "wallet-query.boc" B>file
 ---------------------------------------------
 
-In general, you will need to edit the line containing the destination address (0x60c0...c0d0 in our example) and the sequence number of the test giver (the "0" in the "0 constant seqno" line). The newly-created message to the new smart contract must have its bounce bit clear, otherwise the transfer will be "bounced" to its sender.
+In general, you will need to edit the line containing the destination address (0x60c0...c0d0 in our example) and the sequence number of the test giver (the "0" in the "0 constant seqno" line). Alternatively, you can pass the required parameters as command-line arguments to
+
+   fift -I<include-path> -s <path-to-testgiver-fif> <dest-addr> <seqno> <amount> [<savefile>]
+
+For instance,
+
+   fift -I<source-directory>/crypto/fift/lib:<source-directory>/crypto/smartcont -s testgiver.fif 0f9gwEFBxqe5bWhhXnqR0mWtDzqaki6a6ckB1PqD9dPA0EKD 6.666 wallet-query
+
+(Again, setting FIFTPATH to <source-directory>/crypto/fift/lib:<source-directory>/crypto/smartcont and installing fift binary as /usr/bin/fift is a good idea.)
+
+The newly-created message to the new smart contract must have its bounce bit clear, otherwise the transfer will be "bounced" to its sender.
 
 This Fift code creates an internal message from the test giver smart contract to the address of our new smart contract carrying 6.666 test Grams (you can enter any other amount here up to approximately 20 Grams). Then this message is enveloped into an external message addressed to the test giver; this external message must also contain the correct sequence number of the test giver. When the test giver receives such an external message, it checks whether the sequence number matches the one stored in its persistent data, and if it does, sends the embedded internal message with the required amount of test Grams to its destination (our smart contract in this case).
 
@@ -445,8 +468,18 @@ You can hard-code the address of your smart contract here by changing the fourth
 
 You will also need to change the destination address, the name of the file with the private key, the sequence number (it will be 1 immediately after the smart contract is initialized; the actual value can always be retrieved by inspecting the current account state) and the Gram amount to be transferred. The payload of the internal message contains 32 bits with the string "TEST"; it can be changed to something more useful if necessary.
 
+Alternatively, you can use the more sophisticated version of this script provided in crypto/smartcont/wallet.fif in the source tree, and pass all the required parameters as command-line arguments:
+
+   fift -I<source-directory>/crypto/fift/lib:<source-directory>/crypto/smartcont -s wallet.fif <your-wallet-id> <destination-addr> <your-wallet-seqno> <gram-amount>
+
+For example,
+
+   fift -I<source-directory>/crypto/fift/lib:<source-directory>/crypto/smartcont -s wallet.fif my_new_wallet kf8Ty2EqAKfAksff0upF1gOptUWRukyI9x5wfgCbh58Pss9j 1  .666
+
+Here `my_new_wallet` is the identifier of your wallet used before with new-wallet.fif; the address and the private key of your test wallet will be loaded from files `my_new_wallet.addr` and `my_new_wallet.pk` in the current directory.
+
 When you run this code (by invoking the Fift interpreter), you create an external message with a destination equal to the address of your wallet smart contract, containing a correct Ed25519 signature, a sequence number, and an enveloped internal message from your wallet smart contract to the smart contract indicated in dest_addr, with an arbitrary value attached and an arbitrary payload. When your smart contract receives and processes this external message, it first checks the signature and the sequence number. If they are correct, it accepts the external message, sends the embedded internal message from itself to the intended destination, and increases the sequence number in its persistent data (this is a simple measure to prevent replay attacks, in case this sample wallet smart contract code ends up used in a real wallet application).
 
 Of course, a true TON Blockchain wallet application would hide all the intermediate steps explained above. It would first communicate the address of the new smart contract to the user, asking them to transfer some funds to the indicated address (displayed in its non-bounceable user-friendly form) from another wallet or a cryptocurrency exchange, and then would provide a simple interface to display the current balance and to transfer funds to whatever other addresses the user wants. (The aim of this document is to explain how to create new non-trivial smart contracts and experiment with the TON Blockchain Test Network, rather than to explain how one could use the Lite Client instead of a more user-friendly wallet application.)
 
-One final remark: The above examples used smart contracts in the basic workchain (workchain 0). They would work in exactly the same way in the masterchain (workchain -1), if one changes the "0 constant wc" to "-1 constant wc" in relevant places. The only difference is that the processing and storage fees in the basic workchain are 10-100 times lower than in the masterchain.
+One final remark: The above examples used smart contracts in the basic workchain (workchain 0). They would work in exactly the same way in the masterchain (workchain -1), if one changes the "0 constant wc" to "-1 constant wc" in relevant places. The only difference is that the processing and storage fees in the basic workchain are 10-100 times lower than in the masterchain. Some smart contracts (such as the validator election smart contract) accept transfers only from masterchain smart contracts, so you'll need a wallet in the masterchain if you wish to make stakes on behalf of your own validator and participate in the elections.

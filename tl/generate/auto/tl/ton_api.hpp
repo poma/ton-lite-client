@@ -152,18 +152,6 @@ bool downcast_call(Object &obj, const T &func) {
     case adnl_packetContents::ID:
       func(static_cast<adnl_packetContents &>(obj));
       return true;
-    case adnl_proxy_none::ID:
-      func(static_cast<adnl_proxy_none &>(obj));
-      return true;
-    case adnl_proxy_fast::ID:
-      func(static_cast<adnl_proxy_fast &>(obj));
-      return true;
-    case adnl_proxyToFastHash::ID:
-      func(static_cast<adnl_proxyToFastHash &>(obj));
-      return true;
-    case adnl_proxyToFast::ID:
-      func(static_cast<adnl_proxyToFast &>(obj));
-      return true;
     case adnl_config_global::ID:
       func(static_cast<adnl_config_global &>(obj));
       return true;
@@ -422,9 +410,6 @@ bool downcast_call(Object &obj, const T &func) {
     case engine_addr::ID:
       func(static_cast<engine_addr &>(obj));
       return true;
-    case engine_addrProxy::ID:
-      func(static_cast<engine_addrProxy &>(obj));
-      return true;
     case engine_adnl::ID:
       func(static_cast<engine_adnl &>(obj));
       return true;
@@ -452,12 +437,6 @@ bool downcast_call(Object &obj, const T &func) {
     case engine_validatorTempKey::ID:
       func(static_cast<engine_validatorTempKey &>(obj));
       return true;
-    case engine_adnlProxy_config::ID:
-      func(static_cast<engine_adnlProxy_config &>(obj));
-      return true;
-    case engine_adnlProxy_port::ID:
-      func(static_cast<engine_adnlProxy_port &>(obj));
-      return true;
     case engine_dht_config::ID:
       func(static_cast<engine_dht_config &>(obj));
       return true;
@@ -466,9 +445,6 @@ bool downcast_call(Object &obj, const T &func) {
       return true;
     case engine_validator_controlQueryError::ID:
       func(static_cast<engine_validator_controlQueryError &>(obj));
-      return true;
-    case engine_validator_jsonConfig::ID:
-      func(static_cast<engine_validator_jsonConfig &>(obj));
       return true;
     case engine_validator_keyHash::ID:
       func(static_cast<engine_validator_keyHash &>(obj));
@@ -701,8 +677,8 @@ bool downcast_call(Object &obj, const T &func) {
     case validatorSession_candidateId::ID:
       func(static_cast<validatorSession_candidateId &>(obj));
       return true;
-    case validatorSession_config::ID:
-      func(static_cast<validatorSession_config &>(obj));
+    case validatorSession_id::ID:
+      func(static_cast<validatorSession_id &>(obj));
       return true;
     case validatorSession_message_startSession::ID:
       func(static_cast<validatorSession_message_startSession &>(obj));
@@ -820,6 +796,9 @@ bool downcast_call(Function &obj, const T &func) {
     case engine_validator_changeFullNodeAdnlAddress::ID:
       func(static_cast<engine_validator_changeFullNodeAdnlAddress &>(obj));
       return true;
+    case engine_validator_changePassword::ID:
+      func(static_cast<engine_validator_changePassword &>(obj));
+      return true;
     case engine_validator_controlQuery::ID:
       func(static_cast<engine_validator_controlQuery &>(obj));
       return true;
@@ -862,8 +841,14 @@ bool downcast_call(Function &obj, const T &func) {
     case engine_validator_getTime::ID:
       func(static_cast<engine_validator_getTime &>(obj));
       return true;
+    case engine_validator_importLocalKey::ID:
+      func(static_cast<engine_validator_importLocalKey &>(obj));
+      return true;
     case engine_validator_importPrivateKey::ID:
       func(static_cast<engine_validator_importPrivateKey &>(obj));
+      return true;
+    case engine_validator_setPassword::ID:
+      func(static_cast<engine_validator_setPassword &>(obj));
       return true;
     case engine_validator_setVerbosity::ID:
       func(static_cast<engine_validator_setVerbosity &>(obj));
@@ -1150,26 +1135,6 @@ bool downcast_call(adnl_Message &obj, const T &func) {
  * \returns whether function object call has happened. Should always return true for correct parameters.
  */
 template <class T>
-bool downcast_call(adnl_Proxy &obj, const T &func) {
-  switch (obj.get_id()) {
-    case adnl_proxy_none::ID:
-      func(static_cast<adnl_proxy_none &>(obj));
-      return true;
-    case adnl_proxy_fast::ID:
-      func(static_cast<adnl_proxy_fast &>(obj));
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Calls specified function object with the specified object downcasted to the most-derived type.
- * \param[in] obj Object to pass as an argument to the function object.
- * \param[in] func Function object to which the object will be passed.
- * \returns whether function object call has happened. Should always return true for correct parameters.
- */
-template <class T>
 bool downcast_call(catchain_BlockResult &obj, const T &func) {
   switch (obj.get_id()) {
     case catchain_blockNotFound::ID:
@@ -1442,26 +1407,6 @@ bool downcast_call(dht_config_Local &obj, const T &func) {
       return true;
     case dht_config_random_local::ID:
       func(static_cast<dht_config_random_local &>(obj));
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Calls specified function object with the specified object downcasted to the most-derived type.
- * \param[in] obj Object to pass as an argument to the function object.
- * \param[in] func Function object to which the object will be passed.
- * \returns whether function object call has happened. Should always return true for correct parameters.
- */
-template <class T>
-bool downcast_call(engine_Addr &obj, const T &func) {
-  switch (obj.get_id()) {
-    case engine_addr::ID:
-      func(static_cast<engine_addr &>(obj));
-      return true;
-    case engine_addrProxy::ID:
-      func(static_cast<engine_addrProxy &>(obj));
       return true;
     default:
       return false;

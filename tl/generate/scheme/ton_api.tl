@@ -438,6 +438,15 @@ db.lt.status.value total_shards:int = db.lt.status.Value;
 
 ---types---
 
+validator.groupMember public_key_hash:int256 adnl:int256 weight:long = engine.validator.GroupMember; 
+validator.group workchain:int shard:long catchain_seqno:int config_hash:int256 members:(vector validator.groupMember) = validator.Group; 
+
+---functions---
+
+
+---types---
+
+
 id.config.local id:PrivateKey = id.config.Local;
 dht.config.local id:adnl.id.short = dht.config.Local;
 dht.config.random.local cnt:int = dht.config.Local;
@@ -465,7 +474,7 @@ engine.addrProxy in_ip:int in_port:int out_ip:int out_port:int
 engine.dht id:int256 = engine.Dht;
 engine.validatorTempKey key:int256 expire_at:int = engine.ValidatorTempKey;
 engine.validatorAdnlAddress id:int256 expire_at:int = engine.ValidatorAdnlAddress;
-engine.validator id:int256 temp_keys:(vector engine.validatorTempKey) adnl_addrs:(vector engine.validatorAdnlAddress) expire_at:int = engine.Validator;
+engine.validator id:int256 temp_keys:(vector engine.validatorTempKey) adnl_addrs:(vector engine.validatorAdnlAddress) election_date:int expire_at:int = engine.Validator;
 engine.liteServer id:int256 port:int = engine.LiteServer;
 engine.controlProcess id:int256 permissions:int = engine.ControlProcess;
 engine.controlInterface id:int256 port:int allowed:(vector engine.controlProcess) = engine.ControlInterface; 
@@ -501,6 +510,9 @@ engine.validator.time time:int = engine.validator.Time;
 engine.validator.success = engine.validator.Success;
 
 engine.validator.jsonConfig data:string = engine.validator.JsonConfig;
+
+engine.validator.electionBid election_date:int perm_key:int256 adnl_addr:int256 to_send_payload:bytes = engine.validator.ElectionBid; 
+
 ---functions---
 
 engine.validator.getTime = engine.validator.Time;
@@ -510,7 +522,7 @@ engine.validator.exportPublicKey key_hash:int256 = PublicKey;
 engine.validator.generateKeyPair = engine.validator.KeyHash;
 engine.validator.addAdnlId key_hash:int256 category:int = engine.validator.Success;
 engine.validator.addDhtId key_hash:int256 = engine.validator.Success;
-engine.validator.addValidatorPermanentKey key_hash:int256 ttl:int = engine.validator.Success;
+engine.validator.addValidatorPermanentKey key_hash:int256 election_date:int ttl:int = engine.validator.Success;
 engine.validator.addValidatorTempKey permanent_key_hash:int256 key_hash:int256 ttl:int = engine.validator.Success;
 engine.validator.addValidatorAdnlAddress permanent_key_hash:int256 key_hash:int256 ttl:int = engine.validator.Success;
 engine.validator.changeFullNodeAdnlAddress adnl_id:int256 = engine.validator.Success; 
@@ -535,5 +547,7 @@ engine.validator.getStats = engine.validator.Stats;
 engine.validator.getConfig = engine.validator.JsonConfig;
 
 engine.validator.setVerbosity verbosity:int = engine.validator.Success; 
+
+engine.validator.createElectionBid election_date:int election_addr:string wallet:string = engine.validator.ElectionBid;
 
 engine.validator.controlQuery data:bytes = Object;

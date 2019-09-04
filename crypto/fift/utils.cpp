@@ -25,23 +25,23 @@
 namespace fift {
 namespace {
 
-std::string fift_dir() {
-  return td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir().str() + "lib/";
+std::string fift_dir(std::string dir) {
+  return dir.size() > 0 ? dir : td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir().str() + "lib/";
 }
-std::string load_source(std::string name, std::string dir = fift_dir()) {
-  return td::read_file_str(dir + name).move_as_ok();
+std::string load_source(std::string name, std::string dir = "") {
+  return td::read_file_str(fift_dir(dir) + name).move_as_ok();
 }
-std::string load_Fift_fif() {
-  return load_source("Fift.fif");
+std::string load_Fift_fif(std::string dir = "") {
+  return load_source("Fift.fif", dir);
 }
-std::string load_Asm_fif() {
-  return load_source("Asm.fif");
+std::string load_Asm_fif(std::string dir = "") {
+  return load_source("Asm.fif", dir);
 }
-std::string load_TonUtil_fif() {
-  return load_source("TonUtil.fif");
+std::string load_TonUtil_fif(std::string dir = "") {
+  return load_source("TonUtil.fif", dir);
 }
-std::string load_Lists_fif() {
-  return load_source("Lists.fif");
+std::string load_Lists_fif(std::string dir = "") {
+  return load_source("Lists.fif", dir);
 }
 
 class MemoryFileLoader : public fift::FileLoader {
@@ -90,18 +90,18 @@ class MemoryFileLoader : public fift::FileLoader {
   std::map<std::string, std::string, std::less<>> files_;
 };
 fift::SourceLookup create_source_lookup(std::string main, bool need_preamble = true, bool need_asm = true,
-                                        bool need_ton_util = true) {
+                                        bool need_ton_util = true, std::string dir = "") {
   auto loader = std::make_unique<MemoryFileLoader>();
   loader->add_file("/main.fif", std::move(main));
   if (need_preamble) {
-    loader->add_file("/Fift.fif", load_Fift_fif());
+    loader->add_file("/Fift.fif", load_Fift_fif(dir));
   }
   if (need_asm) {
-    loader->add_file("/Asm.fif", load_Asm_fif());
+    loader->add_file("/Asm.fif", load_Asm_fif(dir));
   }
   if (need_ton_util) {
-    loader->add_file("/Lists.fif", load_Lists_fif());
-    loader->add_file("/TonUtil.fif", load_TonUtil_fif());
+    loader->add_file("/Lists.fif", load_Lists_fif(dir));
+    loader->add_file("/TonUtil.fif", load_TonUtil_fif(dir));
   }
   auto res = fift::SourceLookup(std::move(loader));
   res.add_include_path("/");
@@ -132,9 +132,9 @@ td::Result<fift::SourceLookup> run_fift(fift::SourceLookup source_lookup, std::o
   return std::move(fift.config().source_lookup);
 }
 }  // namespace
-td::Result<FiftOutput> mem_run_fift(std::string source, std::vector<std::string> args) {
+td::Result<FiftOutput> mem_run_fift(std::string source, std::vector<std::string> args, std::string fift_dir) {
   std::stringstream ss;
-  auto r_source_lookup = run_fift(create_source_lookup(source), &ss, true, std::move(args));
+  auto r_source_lookup = run_fift(create_source_lookup(source, true, true, true, fift_dir), &ss, true, std::move(args));
   if (r_source_lookup.is_error()) {
     LOG(ERROR) << ss.str();
   }

@@ -38,6 +38,7 @@ class AdnlOutboundConnection : public AdnlExtConnection {
   PrivateKey local_id_;
   td::actor::ActorId<AdnlExtClientImpl> ext_client_;
   td::SecureString nonce_;
+  bool authorization_complete_ = false;
 
  public:
   AdnlOutboundConnection(td::SocketFd fd, std::unique_ptr<AdnlExtConnection::Callback> callback, AdnlNodeIdFull dst,
@@ -57,6 +58,9 @@ class AdnlOutboundConnection : public AdnlExtConnection {
   }
   td::Status process_custom_packet(td::BufferSlice &data, bool &processed) override;
   void start_up() override;
+  bool authorized() const override {
+    return local_id_.empty() ? true : authorization_complete_;
+  }
 };
 
 class AdnlExtClientImpl : public AdnlExtClient {

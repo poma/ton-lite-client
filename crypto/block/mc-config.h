@@ -496,6 +496,7 @@ class Config {
     return cur_validators_.get();
   }
   ton::ValidatorSessionConfig get_consensus_config() const;
+  bool foreach_config_param(std::function<bool(int, Ref<vm::Cell>)> scan_func) const;
   Ref<WorkchainInfo> get_workchain_info(ton::WorkchainId workchain_id) const;
   std::vector<ton::ValidatorDescr> compute_validator_set(ton::ShardIdFull shard, const block::ValidatorSet& vset,
                                                          ton::UnixTime time, ton::CatchainSeqno cc_seqno) const;
@@ -507,10 +508,11 @@ class Config {
                                                                    const block::ValidatorSet& vset, ton::UnixTime time,
                                                                    ton::CatchainSeqno cc_seqno);
 
-  static td::Result<std::unique_ptr<Config>> unpack_config(Ref<vm::Cell> mc_state_root,
+  static td::Result<std::unique_ptr<Config>> unpack_config(Ref<vm::Cell> config_root,
                                                            const td::Bits256& config_addr = td::Bits256::zero(),
                                                            int mode = 0);
   static td::Result<std::unique_ptr<Config>> unpack_config(Ref<vm::CellSlice> config_csr, int mode = 0);
+  static td::Result<std::unique_ptr<Config>> extract_from_state(Ref<vm::Cell> mc_state_root, int mode = 0);
   static td::Result<std::unique_ptr<Config>> extract_from_key_block(Ref<vm::Cell> key_block_root, int mode = 0);
 
  protected:

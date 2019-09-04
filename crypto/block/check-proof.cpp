@@ -37,7 +37,7 @@ td::Status check_block_header_proof(td::Ref<vm::Cell> root, ton::BlockIdExt blki
   std::vector<ton::BlockIdExt> prev;
   ton::BlockIdExt mc_blkid;
   bool after_split;
-  TRY_STATUS(block::unpack_block_prev_blk_ext(root, blkid, prev, mc_blkid, after_split));
+  TRY_STATUS(block::unpack_block_prev_blk_try(root, blkid, prev, mc_blkid, after_split));
   block::gen::Block::Record blk;
   block::gen::BlockInfo::Record info;
   if (!(tlb::unpack_cell(root, blk) && tlb::unpack_cell(blk.info, info))) {
@@ -59,6 +59,36 @@ td::Status check_block_header_proof(td::Ref<vm::Cell> root, ton::BlockIdExt blki
     }
   }
   return td::Status::OK();
+}
+
+td::Result<td::Bits256> check_state_proof(ton::BlockIdExt blkid, td::Slice proof) {
+  TRY_RESULT(proof_root, vm::std_boc_deserialize(proof));
+  auto virt_root = vm::MerkleProof::virtualize(std::move(proof_root), 1);
+  if (virt_root.is_null()) {
+    return td::Status::Error("account state proof is invalid");
+  }
+  td::Bits256 state_hash;
+  TRY_STATUS(check_block_header_proof(std::move(virt_root), blkid, &state_hash));
+  return state_hash;
+}
+
+td::Result<Ref<vm::Cell>> check_extract_state_proof(ton::BlockIdExt blkid, td::Slice proof, td::Slice data) {
+  try {
+    TRY_RESULT(state_hash, check_state_proof(blkid, proof));
+    TRY_RESULT(state_root, vm::std_boc_deserialize(data));
+    auto state_virt_root = vm::MerkleProof::virtualize(std::move(state_root), 1);
+    if (state_virt_root.is_null()) {
+      return td::Status::Error("account state proof is invalid");
+    }
+    if (state_hash != state_virt_root->get_hash().bits()) {
+      return td::Status::Error("root hash mismatch in the shardchain state proof");
+    }
+    return std::move(state_virt_root);
+  } catch (vm::VmError& err) {
+    return td::Status::Error(PSLICE() << "error scanning shard state proof: " << err.get_msg());
+  } catch (vm::VmVirtError& err) {
+    return td::Status::Error(PSLICE() << "virtualization error scanning shard state proof: " << err.get_msg());
+  }
 }
 
 td::Status check_shard_proof(ton::BlockIdExt blk, ton::BlockIdExt shard_blk, td::Slice shard_proof) {

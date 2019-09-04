@@ -150,7 +150,8 @@ double Random::fast(double min, double max) {
   DCHECK(min <= max);
   return min +
          fast_uint32() * 1.0 /
-             (static_cast<double>(std::numeric_limits<td::uint32>::max()) - std::numeric_limits<td::uint32>::min());
+             (static_cast<double>(std::numeric_limits<td::uint32>::max()) - std::numeric_limits<td::uint32>::min()) *
+             (max - min);
 }
 
 Random::Xorshift128plus::Xorshift128plus(uint64 seed) {

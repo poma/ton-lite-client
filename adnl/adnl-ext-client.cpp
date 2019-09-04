@@ -84,6 +84,7 @@ td::Status AdnlOutboundConnection::process_custom_packet(td::BufferSlice &data, 
       nonce_.clear();
 
       processed = true;
+      authorization_complete_ = true;
       return td::Status::OK();
     }
   }

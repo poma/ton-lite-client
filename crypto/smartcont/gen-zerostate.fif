@@ -144,7 +144,7 @@ Masterchain swap
  *
  */
 // max-validators max-main-validators min-validators
-// 9 3 2 config.validator_num!
+// 9 4 1 config.validator_num!
 1000 100 5 config.validator_num!
 // min-stake max-stake min-total-stake max-factor
 GR$10000 GR$10000000 GR$1000000 sg~10 config.validator_stake_limits!

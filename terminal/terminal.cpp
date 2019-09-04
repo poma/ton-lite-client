@@ -148,7 +148,7 @@ void TerminalIOImpl::tear_down() {
 }*/
 
 void TerminalIOImpl::loop() {
-  stdin_.flush_read().ensure();
+  stdin_.flush_read().ignore();
 #ifdef USE_READLINE
   if (use_readline_) {
     while (!stdin_.input_buffer().empty()) {

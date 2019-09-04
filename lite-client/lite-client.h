@@ -59,6 +59,11 @@ class TestNode : public td::actor::Actor {
   std::vector<ton::BlockIdExt> known_blk_ids_;
   std::size_t shown_blk_ids_ = 0;
 
+  td::Timestamp fail_timeout_;
+  td::uint32 running_queries_ = 0;
+  bool ex_mode_ = false;
+  std::vector<td::BufferSlice> ex_queries_;
+
   std::unique_ptr<ton::adnl::AdnlExtClient::Callback> make_callback();
 
   struct TransId {
@@ -80,12 +85,16 @@ class TestNode : public td::actor::Actor {
   void got_mc_state(ton::BlockIdExt blkid, ton::RootHash root_hash, ton::FileHash file_hash, td::BufferSlice data);
   td::Status send_ext_msg_from_filename(std::string filename);
   td::Status save_db_file(ton::FileHash file_hash, td::BufferSlice data);
-  bool get_account_state(ton::WorkchainId workchain, ton::StdSmcAddress addr, ton::BlockIdExt ref_blkid);
+  bool get_account_state(ton::WorkchainId workchain, ton::StdSmcAddress addr, ton::BlockIdExt ref_blkid,
+                         std::string filename = "", int mode = -1);
   void got_account_state(ton::BlockIdExt ref_blk, ton::BlockIdExt blk, ton::BlockIdExt shard_blk,
                          td::BufferSlice shard_proof, td::BufferSlice proof, td::BufferSlice state,
-                         ton::WorkchainId workchain, ton::StdSmcAddress addr);
+                         ton::WorkchainId workchain, ton::StdSmcAddress addr, std::string filename, int mode);
   bool get_all_shards(bool use_last = true, ton::BlockIdExt blkid = {});
   void got_all_shards(ton::BlockIdExt blk, td::BufferSlice proof, td::BufferSlice data);
+  bool get_config_params(ton::BlockIdExt blkid, int mode = 0, std::string filename = "");
+  void got_config_params(ton::BlockIdExt blkid, td::BufferSlice state_proof, td::BufferSlice cfg_proof, int mode,
+                         std::string filename, std::vector<int> params);
   bool get_block(ton::BlockIdExt blk, bool dump = false);
   void got_block(ton::BlockIdExt blkid, td::BufferSlice data, bool dump);
   bool get_state(ton::BlockIdExt blk, bool dump = false);
@@ -113,6 +122,7 @@ class TestNode : public td::actor::Actor {
   bool do_parse_line();
   bool show_help(std::string command);
   std::string get_word(char delim = ' ');
+  bool get_word_to(std::string& str, char delim = ' ');
   int skipspc();
   std::string get_line_tail(bool remove_spaces = true) const;
   bool eoln() const;
@@ -175,6 +185,23 @@ class TestNode : public td::actor::Actor {
     }
     remote_public_key_ = R.move_as_ok();
   }
+  void set_fail_timeout(td::Timestamp ts) {
+    fail_timeout_ = ts;
+    alarm_timestamp().relax(fail_timeout_);
+  }
+  void add_cmd(td::BufferSlice data) {
+    ex_mode_ = true;
+    ex_queries_.push_back(std::move(data));
+  }
+  void alarm() override {
+    if (fail_timeout_.is_in_past()) {
+      std::_Exit(7);
+    }
+    if (ex_mode_ && !running_queries_ && ex_queries_.size() == 0) {
+      std::_Exit(0);
+    }
+    alarm_timestamp().relax(fail_timeout_);
+  }
 
   void start_up() override {
   }
@@ -183,6 +210,7 @@ class TestNode : public td::actor::Actor {
     //td::actor::SchedulerContext::get()->stop();
   }
 
+  void got_result();
   bool envelope_send_query(td::BufferSlice query, td::Promise<td::BufferSlice> promise);
   void parse_line(td::BufferSlice data);
 

@@ -183,7 +183,7 @@ _ ~credit_to(credits, addr, amount) {
       if (banned) {
         recovered += stake;
       } else {
-        credits~credit_to(stake, addr);
+        credits~credit_to(addr, stake);
       }
       total += stake;
     }
@@ -205,7 +205,7 @@ _ ~credit_to(credits, addr, amount) {
       } else {
         var bonus = muldiv(tot_bonuses, stake, tot_stakes);
         returned_bonuses += bonus;
-        credits~credit_to(stake + bonus, addr);
+        credits~credit_to(addr, stake + bonus);
       }
       total += stake;
     }
@@ -266,6 +266,7 @@ _ unfreeze_all(credits, past_elections, elect_id) {
     ;; simple transfer to us (credit "nobody's" account)
     ;; (or no known active validator set)
     grams += msg_value;
+    return store_data(elect, credits, prev_elect, grams, active_id, active_hash);
   }
   ;; zero source address -1:00..00 (collecting validator fees)
   var (fs, f) = prev_elect.udict_get?(32, active_id);
@@ -304,7 +305,7 @@ _ unfreeze_all(credits, past_elections, elect_id) {
   var amount = cs~load_grams();
   cs.end_parse();
   ;; save data
-  set_data(begin_cell().store_dict(elect).store_dict(credits).store_slice(cs).end_cell());
+  set_data(begin_cell().store_dict(elect).store_dict(credits).store_slice(ds).end_cell());
   ;; send amount to sender in a new message
   send_raw_message(begin_cell()
     .store_uint(0x18, 6)
@@ -681,7 +682,7 @@ int check_unfreeze() impure {
     (id, var fs, var f) = prev_elect.udict_get_next?(32, id);
     if (f) {
       var unfreeze_at = fs~load_uint(32);
-      if (unfreeze_at <= now()) {
+      if ((unfreeze_at <= now()) & (id != active_id)) {
         ;; unfreeze!
         (credits, prev_elect, var unused_prizes) = unfreeze_all(credits, prev_elect, id);
         grams += unused_prizes;
@@ -708,28 +709,30 @@ int announce_new_elections(ds, elect, credits) {
     return false;
   }
   var cur_vset = config_param(34);  ;; current validator set
-  var (elect_for, elect_begin_before, elect_end_before, stake_held) = get_validator_conf();
   if (cur_vset.null?()) {
     return false;
   }
+  var (elect_for, elect_begin_before, elect_end_before, stake_held) = get_validator_conf();
   var cur_valid_until = cur_vset.begin_parse().skip_bits(8 + 32).preload_uint(32);
   var t = now();
   var t0 = cur_valid_until - elect_begin_before;
-  if (t >= t0) {
-    ;; less than elect_before_begin seconds left, create new elections
-    if (t - t0 < 60) {
-      ;; pretend that the elections started at t0
-      t = t0;
-    }
-    ;; get stake parameters
-    (_, var min_stake) = config_param(17).begin_parse().load_grams();
-    ;; announce new elections
-    var elect_at = t + elect_begin_before;
-    elect_at~dump();
-    var elect_close = elect_at - elect_end_before;
-    elect = pack_elect(elect_at, elect_close, min_stake, 0, new_dict(), false, false);
-    set_data(begin_cell().store_dict(elect).store_dict(credits).store_slice(ds).end_cell());
+  if (t < t0) {
+    ;; too early for the next elections
+    return false;
   }
+  ;; less than elect_before_begin seconds left, create new elections
+  if (t - t0 < 60) {
+    ;; pretend that the elections started at t0
+    t = t0;
+  }
+  ;; get stake parameters
+  (_, var min_stake) = config_param(17).begin_parse().load_grams();
+  ;; announce new elections
+  var elect_at = t + elect_begin_before;
+  elect_at~dump();
+  var elect_close = elect_at - elect_end_before;
+  elect = pack_elect(elect_at, elect_close, min_stake, 0, new_dict(), false, false);
+  set_data(begin_cell().store_dict(elect).store_dict(credits).store_slice(ds).end_cell());
   return true;
 }
 

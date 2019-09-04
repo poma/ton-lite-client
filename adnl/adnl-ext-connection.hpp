@@ -55,6 +55,9 @@ class AdnlExtConnection : public td::actor::Actor, public td::ObserverBase {
   td::Status receive_packet(td::BufferSlice data);
   virtual td::Status process_custom_packet(td::BufferSlice &data, bool &processed) = 0;
   virtual td::Status process_init_packet(td::BufferSlice data) = 0;
+  virtual bool authorized() const {
+    return false;
+  }
   td::Status init_crypto(td::Slice data);
   void stop_read() {
     stop_read_ = true;
@@ -63,7 +66,7 @@ class AdnlExtConnection : public td::actor::Actor, public td::ObserverBase {
     stop_read_ = false;
   }
   bool check_ready() const {
-    return received_bytes_ && inited_ && !td::can_close(buffered_fd_);
+    return received_bytes_ && inited_ && authorized() && !td::can_close(buffered_fd_);
   }
   void check_ready_async(td::Promise<td::Unit> promise) {
     if (check_ready()) {

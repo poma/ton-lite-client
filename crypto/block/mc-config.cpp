@@ -37,16 +37,16 @@ Config::Config(Ref<vm::Cell> config_root, const td::Bits256& config_addr, int _m
     : mode(_mode), config_addr(config_addr), config_root(std::move(config_root)) {
 }
 
-td::Result<std::unique_ptr<Config>> Config::unpack_config(Ref<vm::Cell> mc_state_root, const td::Bits256& config_addr,
+td::Result<std::unique_ptr<Config>> Config::unpack_config(Ref<vm::Cell> config_root, const td::Bits256& config_addr,
                                                           int mode) {
-  std::unique_ptr<Config> ptr{new Config(std::move(mc_state_root), config_addr, mode)};
-  TRY_STATUS(ptr->unpack());
+  std::unique_ptr<Config> ptr{new Config(std::move(config_root), config_addr, mode)};
+  TRY_STATUS(ptr->unpack_wrapped());
   return std::move(ptr);
 }
 
 td::Result<std::unique_ptr<Config>> Config::unpack_config(Ref<vm::CellSlice> config_csr, int mode) {
   std::unique_ptr<Config> ptr{new Config(mode)};
-  TRY_STATUS(ptr->unpack(std::move(config_csr)));
+  TRY_STATUS(ptr->unpack_wrapped(std::move(config_csr)));
   return std::move(ptr);
 }
 
@@ -59,6 +59,16 @@ td::Result<std::unique_ptr<Config>> Config::extract_from_key_block(Ref<vm::Cell>
     return td::Status::Error(-400, "cannot unpack extra header of key block to extract configuration");
   }
   return block::Config::unpack_config(std::move(mc_extra.config));
+}
+
+td::Result<std::unique_ptr<Config>> Config::extract_from_state(Ref<vm::Cell> mc_state_root, int mode) {
+  gen::ShardStateUnsplit::Record state;
+  gen::McStateExtra::Record extra;
+  if (!(tlb::unpack_cell(mc_state_root, state) && state.global_id &&
+        tlb::unpack_cell(state.custom->prefetch_ref(), extra))) {
+    return td::Status::Error("cannot extract configuration from masterchain state extra information");
+  }
+  return unpack_config(std::move(extra.config), mode);
 }
 
 td::Result<std::unique_ptr<ConfigInfo>> ConfigInfo::extract_config(std::shared_ptr<vm::StaticBagOfCellsDb> static_boc,
@@ -88,8 +98,11 @@ ConfigInfo::ConfigInfo(Ref<vm::Cell> mc_state_root, int _mode) : Config(_mode), 
 td::Status ConfigInfo::unpack_wrapped() {
   try {
     return unpack();
-  } catch (vm::VmError err) {
+  } catch (vm::VmError& err) {
     return td::Status::Error(PSLICE() << "error unpacking block state header and configuration: " << err.get_msg());
+  } catch (vm::VmVirtError& err) {
+    return td::Status::Error(PSLICE() << "virtualization error while unpacking block state header and configuration: "
+                                      << err.get_msg());
   }
 }
 
@@ -273,6 +286,16 @@ ton::ValidatorSessionConfig Config::get_consensus_config() const {
     c.max_collated_data_size = r.max_collated_bytes;
   }
   return c;
+}
+
+bool Config::foreach_config_param(std::function<bool(int, Ref<vm::Cell>)> scan_func) const {
+  if (!config_dict) {
+    return false;
+  }
+  return config_dict->check_for_each([scan_func](Ref<vm::CellSlice> cs_ref, td::ConstBitPtr key, int n) {
+    return n == 32 && cs_ref.not_null() && cs_ref->size_ext() == 0x10000 &&
+           scan_func((int)key.get_int(n), cs_ref->prefetch_ref());
+  });
 }
 
 std::unique_ptr<vm::Dictionary> ShardConfig::extract_shard_hashes_dict(Ref<vm::Cell> mc_state_root) {
