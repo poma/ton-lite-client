@@ -71,7 +71,7 @@ if (NOT CMAKE_CROSSCOMPILING)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMAND ${GENERATE_COMMON_CMD}
     COMMENT "Generate common tl source files"
-    DEPENDS generate_common scheme/ton_api.tlo
+    DEPENDS generate_common scheme/ton_api.tlo scheme/lite_api.tlo
     OUTPUT ${TL_TON_API} ${TL_LITE_API} ${TL_TONLIB_API} ${TL_TONLIB_API_JSON}
   )
   add_custom_target(tl_generate_common DEPENDS ${TL_TON_API} ${TL_LITE_API} ${TL_TONLIB_API} ${TL_TONLIB_API_JSON})

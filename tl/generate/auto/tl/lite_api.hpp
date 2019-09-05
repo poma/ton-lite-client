@@ -47,6 +47,9 @@ bool downcast_call(Object &obj, const T &func) {
     case liteServer_blockTransactions::ID:
       func(static_cast<liteServer_blockTransactions &>(obj));
       return true;
+    case liteServer_configInfo::ID:
+      func(static_cast<liteServer_configInfo &>(obj));
+      return true;
     case liteServer_currentTime::ID:
       func(static_cast<liteServer_currentTime &>(obj));
       return true;
@@ -82,6 +85,9 @@ bool downcast_call(Object &obj, const T &func) {
       return true;
     case liteServer_transactionList::ID:
       func(static_cast<liteServer_transactionList &>(obj));
+      return true;
+    case liteServer_version::ID:
+      func(static_cast<liteServer_version &>(obj));
       return true;
     case liteServer_debug_verbosity::ID:
       func(static_cast<liteServer_debug_verbosity &>(obj));
@@ -124,6 +130,12 @@ bool downcast_call(Function &obj, const T &func) {
     case liteServer_getBlockProof::ID:
       func(static_cast<liteServer_getBlockProof &>(obj));
       return true;
+    case liteServer_getConfigAll::ID:
+      func(static_cast<liteServer_getConfigAll &>(obj));
+      return true;
+    case liteServer_getConfigParams::ID:
+      func(static_cast<liteServer_getConfigParams &>(obj));
+      return true;
     case liteServer_getMasterchainInfo::ID:
       func(static_cast<liteServer_getMasterchainInfo &>(obj));
       return true;
@@ -141,6 +153,9 @@ bool downcast_call(Function &obj, const T &func) {
       return true;
     case liteServer_getTransactions::ID:
       func(static_cast<liteServer_getTransactions &>(obj));
+      return true;
+    case liteServer_getVersion::ID:
+      func(static_cast<liteServer_getVersion &>(obj));
       return true;
     case liteServer_listBlockTransactions::ID:
       func(static_cast<liteServer_listBlockTransactions &>(obj));

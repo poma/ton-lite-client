@@ -72,6 +72,8 @@ class liteServer_blockState;
 
 class liteServer_blockTransactions;
 
+class liteServer_configInfo;
+
 class liteServer_currentTime;
 
 class liteServer_error;
@@ -95,6 +97,8 @@ class liteServer_transactionId3;
 class liteServer_transactionInfo;
 
 class liteServer_transactionList;
+
+class liteServer_version;
 
 class liteServer_debug_verbosity;
 
@@ -419,6 +423,31 @@ class liteServer_blockTransactions final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
+class liteServer_configInfo final : public Object {
+ public:
+  std::int32_t mode_;
+  object_ptr<tonNode_blockIdExt> id_;
+  td::BufferSlice state_proof_;
+  td::BufferSlice config_proof_;
+
+  liteServer_configInfo();
+
+  liteServer_configInfo(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&state_proof_, td::BufferSlice &&config_proof_);
+
+  static const std::int32_t ID = -1367660753;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<liteServer_configInfo> fetch(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
 class liteServer_currentTime final : public Object {
  public:
   std::int32_t now_;
@@ -725,6 +754,31 @@ class liteServer_transactionList final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
+class liteServer_version final : public Object {
+ public:
+  std::int32_t mode_;
+  std::int32_t version_;
+  std::int64_t capabilities_;
+  std::int32_t now_;
+
+  liteServer_version();
+
+  liteServer_version(std::int32_t mode_, std::int32_t version_, std::int64_t capabilities_, std::int32_t now_);
+
+  static const std::int32_t ID = 1510248933;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<liteServer_version> fetch(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
 class liteServer_debug_verbosity final : public Object {
  public:
   std::int32_t value_;
@@ -972,6 +1026,63 @@ class liteServer_getBlockProof final : public Function {
   static ReturnType fetch_result(td::TlParser &p);
 };
 
+class liteServer_getConfigAll final : public Function {
+ public:
+  std::int32_t mode_;
+  object_ptr<tonNode_blockIdExt> id_;
+  mutable std::int32_t var0;
+
+  liteServer_getConfigAll();
+
+  liteServer_getConfigAll(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_);
+
+  static const std::int32_t ID = -1860491593;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  using ReturnType = object_ptr<liteServer_configInfo>;
+
+  static object_ptr<liteServer_getConfigAll> fetch(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+
+  static ReturnType fetch_result(td::TlParser &p);
+};
+
+class liteServer_getConfigParams final : public Function {
+ public:
+  std::int32_t mode_;
+  object_ptr<tonNode_blockIdExt> id_;
+  std::vector<std::int32_t> param_list_;
+  mutable std::int32_t var0;
+
+  liteServer_getConfigParams();
+
+  liteServer_getConfigParams(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_, std::vector<std::int32_t> &&param_list_);
+
+  static const std::int32_t ID = 705764377;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  using ReturnType = object_ptr<liteServer_configInfo>;
+
+  static object_ptr<liteServer_getConfigParams> fetch(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+
+  static ReturnType fetch_result(td::TlParser &p);
+};
+
 class liteServer_getMasterchainInfo final : public Function {
  public:
 
@@ -1131,6 +1242,31 @@ class liteServer_getTransactions final : public Function {
   using ReturnType = object_ptr<liteServer_transactionList>;
 
   static object_ptr<liteServer_getTransactions> fetch(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+
+  static ReturnType fetch_result(td::TlParser &p);
+};
+
+class liteServer_getVersion final : public Function {
+ public:
+
+  liteServer_getVersion();
+
+  static const std::int32_t ID = 590058507;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  using ReturnType = object_ptr<liteServer_version>;
+
+  static object_ptr<liteServer_getVersion> fetch(td::TlParser &p);
+
+  explicit liteServer_getVersion(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 

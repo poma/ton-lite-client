@@ -499,10 +499,11 @@ _ key:Bool blk_ref:ExtBlkRef = KeyExtBlkRef;
 
 _ (HashmapAugE 32 KeyExtBlkRef KeyMaxLt) = OldMcBlocksInfo;
 
-masterchain_state_extra#cc25
+masterchain_state_extra#cc26
   shard_hashes:ShardHashes
   config:ConfigParams
-  ^[ validator_info:ValidatorInfo
+  ^[ flags:(## 16) { flags = 0 }
+     validator_info:ValidatorInfo
      prev_blocks:OldMcBlocksInfo
      after_key_block:Bool
      last_key_block:(Maybe ExtBlkRef) ]
@@ -547,9 +548,14 @@ _ config_addr:bits256 = ConfigParam 0;
 _ elector_addr:bits256 = ConfigParam 1;
 _ minter_addr:bits256 = ConfigParam 2;  // ConfigParam 0 is used if absent
 _ fee_collector_addr:bits256 = ConfigParam 3;  // ConfigParam 1 is used if absent
+_ dns_root_addr:bits256 = ConfigParam 4;  // root TON DNS resolver
 
 _ mint_new_price:Grams mint_add_price:Grams = ConfigParam 6;
 _ to_mint:ExtraCurrencyCollection = ConfigParam 7;
+
+capabilities#c4 version:uint32 capabilities:uint64 = GlobalVersion;
+_ GlobalVersion = ConfigParam 8;  // all zero if absent
+_ mandatory_params:(Hashmap 32 True) = ConfigParam 9;
 
 wfmt_basic#1 vm_version:int32 vm_mode:uint64 = WorkchainFormat 1;
 wfmt_ext#0 min_addr_len:(## 12) max_addr_len:(## 12) addr_len_step:(## 12)

@@ -74,6 +74,12 @@ class adnl_nodes;
 
 class adnl_packetContents;
 
+class adnl_Proxy;
+
+class adnl_proxyToFastHash;
+
+class adnl_proxyToFast;
+
 class adnl_config_global;
 
 class adnl_db_node_key;
@@ -190,7 +196,7 @@ class dht_db_key_bucket;
 
 class dummyworkchain0_config_global;
 
-class engine_addr;
+class engine_Addr;
 
 class engine_adnl;
 
@@ -210,11 +216,21 @@ class engine_validatorAdnlAddress;
 
 class engine_validatorTempKey;
 
+class engine_adnlProxy_config;
+
+class engine_adnlProxy_port;
+
 class engine_dht_config;
 
 class engine_validator_config;
 
 class engine_validator_controlQueryError;
+
+class engine_validator_electionBid;
+
+class validator_groupMember;
+
+class engine_validator_jsonConfig;
 
 class engine_validator_keyHash;
 
@@ -308,6 +324,8 @@ class tonNode_shardPublicOverlayId;
 
 class tonNode_zeroStateIdExt;
 
+class validator_group;
+
 class validator_config_global;
 
 class validator_config_Local;
@@ -318,7 +336,7 @@ class validatorSession_candidate;
 
 class validatorSession_candidateId;
 
-class validatorSession_id;
+class validatorSession_config;
 
 class validatorSession_Message;
 
@@ -1533,6 +1551,112 @@ class adnl_packetContents final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
+class adnl_Proxy: public Object {
+ public:
+
+  static object_ptr<adnl_Proxy> fetch(td::TlParser &p);
+};
+
+class adnl_proxy_none final : public adnl_Proxy {
+ public:
+
+  adnl_proxy_none();
+
+  static const std::int32_t ID = -90551726;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<adnl_Proxy> fetch(td::TlParser &p);
+
+  explicit adnl_proxy_none(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class adnl_proxy_fast final : public adnl_Proxy {
+ public:
+  td::BufferSlice shared_secret_;
+
+  adnl_proxy_fast();
+
+  explicit adnl_proxy_fast(td::BufferSlice &&shared_secret_);
+
+  static const std::int32_t ID = 554536094;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<adnl_Proxy> fetch(td::TlParser &p);
+
+  explicit adnl_proxy_fast(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class adnl_proxyToFastHash final : public Object {
+ public:
+  std::int32_t ip_;
+  std::int32_t port_;
+  std::int32_t date_;
+  td::Bits256 data_hash_;
+  td::Bits256 shared_secret_;
+
+  adnl_proxyToFastHash();
+
+  adnl_proxyToFastHash(std::int32_t ip_, std::int32_t port_, std::int32_t date_, td::Bits256 const &data_hash_, td::Bits256 const &shared_secret_);
+
+  static const std::int32_t ID = -574752674;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<adnl_proxyToFastHash> fetch(td::TlParser &p);
+
+  explicit adnl_proxyToFastHash(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class adnl_proxyToFast final : public Object {
+ public:
+  std::int32_t ip_;
+  std::int32_t port_;
+  std::int32_t date_;
+  td::Bits256 signature_;
+
+  adnl_proxyToFast();
+
+  adnl_proxyToFast(std::int32_t ip_, std::int32_t port_, std::int32_t date_, td::Bits256 const &signature_);
+
+  static const std::int32_t ID = -1259462186;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<adnl_proxyToFast> fetch(td::TlParser &p);
+
+  explicit adnl_proxyToFast(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
 class adnl_config_global final : public Object {
  public:
   object_ptr<adnl_nodes> static_nodes_;
@@ -2150,15 +2274,16 @@ class control_config_local final : public Object {
 
 class db_candidate final : public Object {
  public:
+  object_ptr<PublicKey> source_;
   object_ptr<tonNode_blockIdExt> id_;
   td::BufferSlice data_;
   td::BufferSlice collated_data_;
 
   db_candidate();
 
-  db_candidate(object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&data_, td::BufferSlice &&collated_data_);
+  db_candidate(object_ptr<PublicKey> &&source_, object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&data_, td::BufferSlice &&collated_data_);
 
-  static const std::int32_t ID = 329181652;
+  static const std::int32_t ID = 1708747482;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -2343,14 +2468,15 @@ class db_blockdb_value final : public Object {
 
 class db_candidate_id final : public Object {
  public:
+  object_ptr<PublicKey> source_;
   object_ptr<tonNode_blockIdExt> id_;
   td::Bits256 collated_data_file_hash_;
 
   db_candidate_id();
 
-  db_candidate_id(object_ptr<tonNode_blockIdExt> &&id_, td::Bits256 const &collated_data_file_hash_);
+  db_candidate_id(object_ptr<PublicKey> &&source_, object_ptr<tonNode_blockIdExt> &&id_, td::Bits256 const &collated_data_file_hash_);
 
-  static const std::int32_t ID = -562931756;
+  static const std::int32_t ID = 935375495;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -3679,26 +3805,61 @@ class dummyworkchain0_config_global final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
-class engine_addr final : public Object {
+class engine_Addr: public Object {
+ public:
+
+  static object_ptr<engine_Addr> fetch(td::TlParser &p);
+};
+
+class engine_addr final : public engine_Addr {
  public:
   std::int32_t ip_;
   std::int32_t port_;
-  bool is_proxy_;
   std::vector<std::int32_t> categories_;
   std::vector<std::int32_t> priority_categories_;
 
   engine_addr();
 
-  engine_addr(std::int32_t ip_, std::int32_t port_, bool is_proxy_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_);
+  engine_addr(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_);
 
-  static const std::int32_t ID = -1740086985;
+  static const std::int32_t ID = -281993236;
   std::int32_t get_id() const final {
     return ID;
   }
 
-  static object_ptr<engine_addr> fetch(td::TlParser &p);
+  static object_ptr<engine_Addr> fetch(td::TlParser &p);
 
   explicit engine_addr(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class engine_addrProxy final : public engine_Addr {
+ public:
+  std::int32_t in_ip_;
+  std::int32_t in_port_;
+  std::int32_t out_ip_;
+  std::int32_t out_port_;
+  object_ptr<adnl_Proxy> proxy_type_;
+  std::vector<std::int32_t> categories_;
+  std::vector<std::int32_t> priority_categories_;
+
+  engine_addrProxy();
+
+  engine_addrProxy(std::int32_t in_ip_, std::int32_t in_port_, std::int32_t out_ip_, std::int32_t out_port_, object_ptr<adnl_Proxy> &&proxy_type_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_);
+
+  static const std::int32_t ID = -1965071031;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<engine_Addr> fetch(td::TlParser &p);
+
+  explicit engine_addrProxy(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 
@@ -3861,13 +4022,14 @@ class engine_validator final : public Object {
   td::Bits256 id_;
   std::vector<object_ptr<engine_validatorTempKey>> temp_keys_;
   std::vector<object_ptr<engine_validatorAdnlAddress>> adnl_addrs_;
+  std::int32_t election_date_;
   std::int32_t expire_at_;
 
   engine_validator();
 
-  engine_validator(td::Bits256 const &id_, std::vector<object_ptr<engine_validatorTempKey>> &&temp_keys_, std::vector<object_ptr<engine_validatorAdnlAddress>> &&adnl_addrs_, std::int32_t expire_at_);
+  engine_validator(td::Bits256 const &id_, std::vector<object_ptr<engine_validatorTempKey>> &&temp_keys_, std::vector<object_ptr<engine_validatorAdnlAddress>> &&adnl_addrs_, std::int32_t election_date_, std::int32_t expire_at_);
 
-  static const std::int32_t ID = 307036396;
+  static const std::int32_t ID = -2006980055;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -3933,6 +4095,58 @@ class engine_validatorTempKey final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
+class engine_adnlProxy_config final : public Object {
+ public:
+  std::vector<object_ptr<engine_adnlProxy_port>> ports_;
+
+  engine_adnlProxy_config();
+
+  explicit engine_adnlProxy_config(std::vector<object_ptr<engine_adnlProxy_port>> &&ports_);
+
+  static const std::int32_t ID = 1848000769;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<engine_adnlProxy_config> fetch(td::TlParser &p);
+
+  explicit engine_adnlProxy_config(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class engine_adnlProxy_port final : public Object {
+ public:
+  std::int32_t in_port_;
+  std::int32_t out_port_;
+  std::int32_t dst_ip_;
+  std::int32_t dst_port_;
+  object_ptr<adnl_Proxy> proxy_type_;
+
+  engine_adnlProxy_port();
+
+  engine_adnlProxy_port(std::int32_t in_port_, std::int32_t out_port_, std::int32_t dst_ip_, std::int32_t dst_port_, object_ptr<adnl_Proxy> &&proxy_type_);
+
+  static const std::int32_t ID = -117344950;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<engine_adnlProxy_port> fetch(td::TlParser &p);
+
+  explicit engine_adnlProxy_port(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
 class engine_dht_config final : public Object {
  public:
   std::vector<object_ptr<engine_dht>> dht_;
@@ -3960,7 +4174,8 @@ class engine_dht_config final : public Object {
 
 class engine_validator_config final : public Object {
  public:
-  std::vector<object_ptr<engine_addr>> addrs_;
+  std::int32_t out_port_;
+  std::vector<object_ptr<engine_Addr>> addrs_;
   std::vector<object_ptr<engine_adnl>> adnl_;
   std::vector<object_ptr<engine_dht>> dht_;
   std::vector<object_ptr<engine_validator>> validators_;
@@ -3971,9 +4186,9 @@ class engine_validator_config final : public Object {
 
   engine_validator_config();
 
-  engine_validator_config(std::vector<object_ptr<engine_addr>> &&addrs_, std::vector<object_ptr<engine_adnl>> &&adnl_, std::vector<object_ptr<engine_dht>> &&dht_, std::vector<object_ptr<engine_validator>> &&validators_, td::Bits256 const &fullnode_, std::vector<object_ptr<engine_liteServer>> &&liteservers_, std::vector<object_ptr<engine_controlInterface>> &&control_, object_ptr<engine_gc> &&gc_);
+  engine_validator_config(std::int32_t out_port_, std::vector<object_ptr<engine_Addr>> &&addrs_, std::vector<object_ptr<engine_adnl>> &&adnl_, std::vector<object_ptr<engine_dht>> &&dht_, std::vector<object_ptr<engine_validator>> &&validators_, td::Bits256 const &fullnode_, std::vector<object_ptr<engine_liteServer>> &&liteservers_, std::vector<object_ptr<engine_controlInterface>> &&control_, object_ptr<engine_gc> &&gc_);
 
-  static const std::int32_t ID = 228520974;
+  static const std::int32_t ID = -1061804008;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -4006,6 +4221,83 @@ class engine_validator_controlQueryError final : public Object {
   static object_ptr<engine_validator_controlQueryError> fetch(td::TlParser &p);
 
   explicit engine_validator_controlQueryError(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class engine_validator_electionBid final : public Object {
+ public:
+  std::int32_t election_date_;
+  td::Bits256 perm_key_;
+  td::Bits256 adnl_addr_;
+  td::BufferSlice to_send_payload_;
+
+  engine_validator_electionBid();
+
+  engine_validator_electionBid(std::int32_t election_date_, td::Bits256 const &perm_key_, td::Bits256 const &adnl_addr_, td::BufferSlice &&to_send_payload_);
+
+  static const std::int32_t ID = 598899261;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<engine_validator_electionBid> fetch(td::TlParser &p);
+
+  explicit engine_validator_electionBid(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class validator_groupMember final : public Object {
+ public:
+  td::Bits256 public_key_hash_;
+  td::Bits256 adnl_;
+  std::int64_t weight_;
+
+  validator_groupMember();
+
+  validator_groupMember(td::Bits256 const &public_key_hash_, td::Bits256 const &adnl_, std::int64_t weight_);
+
+  static const std::int32_t ID = -1953208860;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<validator_groupMember> fetch(td::TlParser &p);
+
+  explicit validator_groupMember(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class engine_validator_jsonConfig final : public Object {
+ public:
+  std::string data_;
+
+  engine_validator_jsonConfig();
+
+  explicit engine_validator_jsonConfig(std::string const &data_);
+
+  static const std::int32_t ID = 321753611;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<engine_validator_jsonConfig> fetch(td::TlParser &p);
+
+  explicit engine_validator_jsonConfig(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 
@@ -4267,12 +4559,13 @@ class id_config_local final : public Object {
 class liteclient_config_global final : public Object {
  public:
   std::vector<object_ptr<liteserver_desc>> liteservers_;
+  object_ptr<validator_config_global> validator_;
 
   liteclient_config_global();
 
-  explicit liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_);
+  liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_, object_ptr<validator_config_global> &&validator_);
 
-  static const std::int32_t ID = -909718307;
+  static const std::int32_t ID = 143507704;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -5778,12 +6071,13 @@ class tonNode_sessionId final : public Object {
   std::int32_t workchain_;
   std::int64_t shard_;
   std::int32_t cc_seqno_;
+  td::Bits256 opts_hash_;
 
   tonNode_sessionId();
 
-  tonNode_sessionId(std::int32_t workchain_, std::int64_t shard_, std::int32_t cc_seqno_);
+  tonNode_sessionId(std::int32_t workchain_, std::int64_t shard_, std::int32_t cc_seqno_, td::Bits256 const &opts_hash_);
 
-  static const std::int32_t ID = -1172640100;
+  static const std::int32_t ID = 2056402618;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -5843,6 +6137,34 @@ class tonNode_zeroStateIdExt final : public Object {
   static object_ptr<tonNode_zeroStateIdExt> fetch(td::TlParser &p);
 
   explicit tonNode_zeroStateIdExt(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+};
+
+class validator_group final : public Object {
+ public:
+  std::int32_t workchain_;
+  std::int64_t shard_;
+  std::int32_t catchain_seqno_;
+  td::Bits256 config_hash_;
+  std::vector<object_ptr<validator_groupMember>> members_;
+
+  validator_group();
+
+  validator_group(std::int32_t workchain_, std::int64_t shard_, std::int32_t catchain_seqno_, td::Bits256 const &config_hash_, std::vector<object_ptr<validator_groupMember>> &&members_);
+
+  static const std::int32_t ID = -120029535;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  static object_ptr<validator_group> fetch(td::TlParser &p);
+
+  explicit validator_group(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 
@@ -6012,25 +6334,29 @@ class validatorSession_candidateId final : public Object {
   void store(td::TlStorerToString &s, const char *field_name) const final;
 };
 
-class validatorSession_id final : public Object {
+class validatorSession_config final : public Object {
  public:
-  td::Bits256 slice_;
-  std::int32_t start_time_;
-  std::int32_t end_time_;
-  std::vector<td::Bits256> participants_;
+  double catchain_idle_timeout_;
+  std::int32_t catchain_max_deps_;
+  std::int32_t round_candidates_;
+  double next_candidate_delay_;
+  std::int32_t round_attempt_duration_;
+  std::int32_t max_round_attempts_;
+  std::int32_t max_block_size_;
+  std::int32_t max_collated_data_size_;
 
-  validatorSession_id();
+  validatorSession_config();
 
-  validatorSession_id(td::Bits256 const &slice_, std::int32_t start_time_, std::int32_t end_time_, std::vector<td::Bits256> &&participants_);
+  validatorSession_config(double catchain_idle_timeout_, std::int32_t catchain_max_deps_, std::int32_t round_candidates_, double next_candidate_delay_, std::int32_t round_attempt_duration_, std::int32_t max_round_attempts_, std::int32_t max_block_size_, std::int32_t max_collated_data_size_);
 
-  static const std::int32_t ID = -22534276;
+  static const std::int32_t ID = -1235092029;
   std::int32_t get_id() const final {
     return ID;
   }
 
-  static object_ptr<validatorSession_id> fetch(td::TlParser &p);
+  static object_ptr<validatorSession_config> fetch(td::TlParser &p);
 
-  explicit validatorSession_id(td::TlParser &p);
+  explicit validatorSession_config(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 
@@ -6554,12 +6880,12 @@ class dht_getSignedAddressList final : public Function {
 
   dht_getSignedAddressList();
 
-  static const std::int32_t ID = 960283782;
+  static const std::int32_t ID = -1451669267;
   std::int32_t get_id() const final {
     return ID;
   }
 
-  using ReturnType = object_ptr<adnl_node>;
+  using ReturnType = object_ptr<dht_node>;
 
   static object_ptr<dht_getSignedAddressList> fetch(td::TlParser &p);
 
@@ -6837,15 +7163,19 @@ class engine_validator_addLiteserver final : public Function {
 
 class engine_validator_addProxy final : public Function {
  public:
-  std::int32_t ip_;
-  std::int32_t port_;
+  std::int32_t in_ip_;
+  std::int32_t in_port_;
+  std::int32_t out_ip_;
+  std::int32_t out_port_;
+  object_ptr<adnl_Proxy> proxy_;
   std::vector<std::int32_t> categories_;
+  std::vector<std::int32_t> priority_categories_;
 
   engine_validator_addProxy();
 
-  engine_validator_addProxy(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_);
+  engine_validator_addProxy(std::int32_t in_ip_, std::int32_t in_port_, std::int32_t out_ip_, std::int32_t out_port_, object_ptr<adnl_Proxy> &&proxy_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_);
 
-  static const std::int32_t ID = -928278296;
+  static const std::int32_t ID = -151178251;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -6898,13 +7228,14 @@ class engine_validator_addValidatorAdnlAddress final : public Function {
 class engine_validator_addValidatorPermanentKey final : public Function {
  public:
   td::Bits256 key_hash_;
+  std::int32_t election_date_;
   std::int32_t ttl_;
 
   engine_validator_addValidatorPermanentKey();
 
-  engine_validator_addValidatorPermanentKey(td::Bits256 const &key_hash_, std::int32_t ttl_);
+  engine_validator_addValidatorPermanentKey(td::Bits256 const &key_hash_, std::int32_t election_date_, std::int32_t ttl_);
 
-  static const std::int32_t ID = 1925653418;
+  static const std::int32_t ID = -1844116104;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -6982,35 +7313,6 @@ class engine_validator_changeFullNodeAdnlAddress final : public Function {
   static ReturnType fetch_result(td::TlParser &p);
 };
 
-class engine_validator_changePassword final : public Function {
- public:
-  td::BufferSlice old_password_;
-  td::BufferSlice new_password_;
-
-  engine_validator_changePassword();
-
-  engine_validator_changePassword(td::BufferSlice &&old_password_, td::BufferSlice &&new_password_);
-
-  static const std::int32_t ID = 2123920564;
-  std::int32_t get_id() const final {
-    return ID;
-  }
-
-  using ReturnType = object_ptr<engine_validator_success>;
-
-  static object_ptr<engine_validator_changePassword> fetch(td::TlParser &p);
-
-  explicit engine_validator_changePassword(td::TlParser &p);
-
-  void store(td::TlStorerCalcLength &s) const final;
-
-  void store(td::TlStorerUnsafe &s) const final;
-
-  void store(td::TlStorerToString &s, const char *field_name) const final;
-
-  static ReturnType fetch_result(td::TlParser &p);
-};
-
 class engine_validator_controlQuery final : public Function {
  public:
   td::BufferSlice data_;
@@ -7039,12 +7341,45 @@ class engine_validator_controlQuery final : public Function {
   static ReturnType fetch_result(td::TlParser &p);
 };
 
+class engine_validator_createElectionBid final : public Function {
+ public:
+  std::int32_t election_date_;
+  std::string election_addr_;
+  std::string wallet_;
+
+  engine_validator_createElectionBid();
+
+  engine_validator_createElectionBid(std::int32_t election_date_, std::string const &election_addr_, std::string const &wallet_);
+
+  static const std::int32_t ID = -451038907;
+  std::int32_t get_id() const final {
+    return ID;
+  }
+
+  using ReturnType = object_ptr<engine_validator_electionBid>;
+
+  static object_ptr<engine_validator_createElectionBid> fetch(td::TlParser &p);
+
+  explicit engine_validator_createElectionBid(td::TlParser &p);
+
+  void store(td::TlStorerCalcLength &s) const final;
+
+  void store(td::TlStorerUnsafe &s) const final;
+
+  void store(td::TlStorerToString &s, const char *field_name) const final;
+
+  static ReturnType fetch_result(td::TlParser &p);
+};
+
 class engine_validator_delAdnlId final : public Function {
  public:
+  td::Bits256 key_hash_;
 
   engine_validator_delAdnlId();
 
-  static const std::int32_t ID = 1513520476;
+  explicit engine_validator_delAdnlId(td::Bits256 const &key_hash_);
+
+  static const std::int32_t ID = 691696882;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -7066,10 +7401,13 @@ class engine_validator_delAdnlId final : public Function {
 
 class engine_validator_delDhtId final : public Function {
  public:
+  td::Bits256 key_hash_;
 
   engine_validator_delDhtId();
 
-  static const std::int32_t ID = -392037184;
+  explicit engine_validator_delDhtId(td::Bits256 const &key_hash_);
+
+  static const std::int32_t ID = -2063770818;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -7122,15 +7460,16 @@ class engine_validator_delListeningPort final : public Function {
 
 class engine_validator_delProxy final : public Function {
  public:
-  std::int32_t ip_;
-  std::int32_t port_;
+  std::int32_t out_ip_;
+  std::int32_t out_port_;
   std::vector<std::int32_t> categories_;
+  std::vector<std::int32_t> priority_categories_;
 
   engine_validator_delProxy();
 
-  engine_validator_delProxy(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_);
+  engine_validator_delProxy(std::int32_t out_ip_, std::int32_t out_port_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_);
 
-  static const std::int32_t ID = -1614543923;
+  static const std::int32_t ID = 1970850941;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -7152,13 +7491,14 @@ class engine_validator_delProxy final : public Function {
 
 class engine_validator_delValidatorAdnlAddress final : public Function {
  public:
+  td::Bits256 permanent_key_hash_;
   td::Bits256 key_hash_;
 
   engine_validator_delValidatorAdnlAddress();
 
-  explicit engine_validator_delValidatorAdnlAddress(td::Bits256 const &key_hash_);
+  engine_validator_delValidatorAdnlAddress(td::Bits256 const &permanent_key_hash_, td::Bits256 const &key_hash_);
 
-  static const std::int32_t ID = -658732960;
+  static const std::int32_t ID = -150453414;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -7208,13 +7548,14 @@ class engine_validator_delValidatorPermanentKey final : public Function {
 
 class engine_validator_delValidatorTempKey final : public Function {
  public:
+  td::Bits256 permanent_key_hash_;
   td::Bits256 key_hash_;
 
   engine_validator_delValidatorTempKey();
 
-  explicit engine_validator_delValidatorTempKey(td::Bits256 const &key_hash_);
+  engine_validator_delValidatorTempKey(td::Bits256 const &permanent_key_hash_, td::Bits256 const &key_hash_);
 
-  static const std::int32_t ID = 737279708;
+  static const std::int32_t ID = -1595481903;
   std::int32_t get_id() const final {
     return ID;
   }
@@ -7320,12 +7661,12 @@ class engine_validator_getConfig final : public Function {
 
   engine_validator_getConfig();
 
-  static const std::int32_t ID = -665383871;
+  static const std::int32_t ID = 1504518693;
   std::int32_t get_id() const final {
     return ID;
   }
 
-  using ReturnType = object_ptr<engine_validator_config>;
+  using ReturnType = object_ptr<engine_validator_jsonConfig>;
 
   static object_ptr<engine_validator_getConfig> fetch(td::TlParser &p);
 
@@ -7390,34 +7731,6 @@ class engine_validator_getTime final : public Function {
   static ReturnType fetch_result(td::TlParser &p);
 };
 
-class engine_validator_importLocalKey final : public Function {
- public:
-  td::Bits256 key_hash_;
-
-  engine_validator_importLocalKey();
-
-  explicit engine_validator_importLocalKey(td::Bits256 const &key_hash_);
-
-  static const std::int32_t ID = 202835227;
-  std::int32_t get_id() const final {
-    return ID;
-  }
-
-  using ReturnType = object_ptr<engine_validator_keyHash>;
-
-  static object_ptr<engine_validator_importLocalKey> fetch(td::TlParser &p);
-
-  explicit engine_validator_importLocalKey(td::TlParser &p);
-
-  void store(td::TlStorerCalcLength &s) const final;
-
-  void store(td::TlStorerUnsafe &s) const final;
-
-  void store(td::TlStorerToString &s, const char *field_name) const final;
-
-  static ReturnType fetch_result(td::TlParser &p);
-};
-
 class engine_validator_importPrivateKey final : public Function {
  public:
   object_ptr<PrivateKey> key_;
@@ -7436,34 +7749,6 @@ class engine_validator_importPrivateKey final : public Function {
   static object_ptr<engine_validator_importPrivateKey> fetch(td::TlParser &p);
 
   explicit engine_validator_importPrivateKey(td::TlParser &p);
-
-  void store(td::TlStorerCalcLength &s) const final;
-
-  void store(td::TlStorerUnsafe &s) const final;
-
-  void store(td::TlStorerToString &s, const char *field_name) const final;
-
-  static ReturnType fetch_result(td::TlParser &p);
-};
-
-class engine_validator_setPassword final : public Function {
- public:
-  td::BufferSlice password_;
-
-  engine_validator_setPassword();
-
-  explicit engine_validator_setPassword(td::BufferSlice &&password_);
-
-  static const std::int32_t ID = -989159111;
-  std::int32_t get_id() const final {
-    return ID;
-  }
-
-  using ReturnType = object_ptr<engine_validator_success>;
-
-  static object_ptr<engine_validator_setPassword> fetch(td::TlParser &p);
-
-  explicit engine_validator_setPassword(td::TlParser &p);
 
   void store(td::TlStorerCalcLength &s) const final;
 

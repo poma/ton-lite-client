@@ -116,6 +116,14 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return adnl_nodes::fetch(p);
     case adnl_packetContents::ID:
       return adnl_packetContents::fetch(p);
+    case adnl_proxy_none::ID:
+      return adnl_proxy_none::fetch(p);
+    case adnl_proxy_fast::ID:
+      return adnl_proxy_fast::fetch(p);
+    case adnl_proxyToFastHash::ID:
+      return adnl_proxyToFastHash::fetch(p);
+    case adnl_proxyToFast::ID:
+      return adnl_proxyToFast::fetch(p);
     case adnl_config_global::ID:
       return adnl_config_global::fetch(p);
     case adnl_db_node_key::ID:
@@ -288,6 +296,8 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return dummyworkchain0_config_global::fetch(p);
     case engine_addr::ID:
       return engine_addr::fetch(p);
+    case engine_addrProxy::ID:
+      return engine_addrProxy::fetch(p);
     case engine_adnl::ID:
       return engine_adnl::fetch(p);
     case engine_controlInterface::ID:
@@ -306,12 +316,22 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return engine_validatorAdnlAddress::fetch(p);
     case engine_validatorTempKey::ID:
       return engine_validatorTempKey::fetch(p);
+    case engine_adnlProxy_config::ID:
+      return engine_adnlProxy_config::fetch(p);
+    case engine_adnlProxy_port::ID:
+      return engine_adnlProxy_port::fetch(p);
     case engine_dht_config::ID:
       return engine_dht_config::fetch(p);
     case engine_validator_config::ID:
       return engine_validator_config::fetch(p);
     case engine_validator_controlQueryError::ID:
       return engine_validator_controlQueryError::fetch(p);
+    case engine_validator_electionBid::ID:
+      return engine_validator_electionBid::fetch(p);
+    case validator_groupMember::ID:
+      return validator_groupMember::fetch(p);
+    case engine_validator_jsonConfig::ID:
+      return engine_validator_jsonConfig::fetch(p);
     case engine_validator_keyHash::ID:
       return engine_validator_keyHash::fetch(p);
     case engine_validator_oneStat::ID:
@@ -454,6 +474,8 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return tonNode_shardPublicOverlayId::fetch(p);
     case tonNode_zeroStateIdExt::ID:
       return tonNode_zeroStateIdExt::fetch(p);
+    case validator_group::ID:
+      return validator_group::fetch(p);
     case validator_config_global::ID:
       return validator_config_global::fetch(p);
     case validator_config_local::ID:
@@ -466,8 +488,8 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return validatorSession_candidate::fetch(p);
     case validatorSession_candidateId::ID:
       return validatorSession_candidateId::fetch(p);
-    case validatorSession_id::ID:
-      return validatorSession_id::fetch(p);
+    case validatorSession_config::ID:
+      return validatorSession_config::fetch(p);
     case validatorSession_message_startSession::ID:
       return validatorSession_message_startSession::fetch(p);
     case validatorSession_message_finishSession::ID:
@@ -546,10 +568,10 @@ object_ptr<Function> Function::fetch(td::TlParser &p) {
       return engine_validator_addValidatorTempKey::fetch(p);
     case engine_validator_changeFullNodeAdnlAddress::ID:
       return engine_validator_changeFullNodeAdnlAddress::fetch(p);
-    case engine_validator_changePassword::ID:
-      return engine_validator_changePassword::fetch(p);
     case engine_validator_controlQuery::ID:
       return engine_validator_controlQuery::fetch(p);
+    case engine_validator_createElectionBid::ID:
+      return engine_validator_createElectionBid::fetch(p);
     case engine_validator_delAdnlId::ID:
       return engine_validator_delAdnlId::fetch(p);
     case engine_validator_delDhtId::ID:
@@ -576,12 +598,8 @@ object_ptr<Function> Function::fetch(td::TlParser &p) {
       return engine_validator_getStats::fetch(p);
     case engine_validator_getTime::ID:
       return engine_validator_getTime::fetch(p);
-    case engine_validator_importLocalKey::ID:
-      return engine_validator_importLocalKey::fetch(p);
     case engine_validator_importPrivateKey::ID:
       return engine_validator_importPrivateKey::fetch(p);
-    case engine_validator_setPassword::ID:
-      return engine_validator_setPassword::fetch(p);
     case engine_validator_setVerbosity::ID:
       return engine_validator_setVerbosity::fetch(p);
     case engine_validator_sign::ID:
@@ -2847,6 +2865,207 @@ void adnl_packetContents::store(td::TlStorerToString &s, const char *field_name)
   }
 }
 
+object_ptr<adnl_Proxy> adnl_Proxy::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  int constructor = p.fetch_int();
+  switch (constructor) {
+    case adnl_proxy_none::ID:
+      return adnl_proxy_none::fetch(p);
+    case adnl_proxy_fast::ID:
+      return adnl_proxy_fast::fetch(p);
+    default:
+      FAIL(PSTRING() << "Unknown constructor found " << td::format::as_hex(constructor));
+  }
+#undef FAIL
+}
+
+adnl_proxy_none::adnl_proxy_none() {
+}
+
+const std::int32_t adnl_proxy_none::ID;
+
+object_ptr<adnl_Proxy> adnl_proxy_none::fetch(td::TlParser &p) {
+  return make_object<adnl_proxy_none>(p);
+}
+
+adnl_proxy_none::adnl_proxy_none(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+#undef FAIL
+{
+  (void)p;
+}
+
+void adnl_proxy_none::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+}
+
+void adnl_proxy_none::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+}
+
+void adnl_proxy_none::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "adnl_proxy_none");
+    s.store_class_end();
+  }
+}
+
+adnl_proxy_fast::adnl_proxy_fast()
+  : shared_secret_()
+{}
+
+adnl_proxy_fast::adnl_proxy_fast(td::BufferSlice &&shared_secret_)
+  : shared_secret_(std::move(shared_secret_))
+{}
+
+const std::int32_t adnl_proxy_fast::ID;
+
+object_ptr<adnl_Proxy> adnl_proxy_fast::fetch(td::TlParser &p) {
+  return make_object<adnl_proxy_fast>(p);
+}
+
+adnl_proxy_fast::adnl_proxy_fast(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : shared_secret_(TlFetchBytes<td::BufferSlice>::parse(p))
+#undef FAIL
+{}
+
+void adnl_proxy_fast::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreString::store(shared_secret_, s);
+}
+
+void adnl_proxy_fast::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreString::store(shared_secret_, s);
+}
+
+void adnl_proxy_fast::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "adnl_proxy_fast");
+    s.store_bytes_field("shared_secret", shared_secret_);
+    s.store_class_end();
+  }
+}
+
+adnl_proxyToFastHash::adnl_proxyToFastHash()
+  : ip_()
+  , port_()
+  , date_()
+  , data_hash_()
+  , shared_secret_()
+{}
+
+adnl_proxyToFastHash::adnl_proxyToFastHash(std::int32_t ip_, std::int32_t port_, std::int32_t date_, td::Bits256 const &data_hash_, td::Bits256 const &shared_secret_)
+  : ip_(ip_)
+  , port_(port_)
+  , date_(date_)
+  , data_hash_(data_hash_)
+  , shared_secret_(shared_secret_)
+{}
+
+const std::int32_t adnl_proxyToFastHash::ID;
+
+object_ptr<adnl_proxyToFastHash> adnl_proxyToFastHash::fetch(td::TlParser &p) {
+  return make_object<adnl_proxyToFastHash>(p);
+}
+
+adnl_proxyToFastHash::adnl_proxyToFastHash(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : ip_(TlFetchInt::parse(p))
+  , port_(TlFetchInt::parse(p))
+  , date_(TlFetchInt::parse(p))
+  , data_hash_(TlFetchInt256::parse(p))
+  , shared_secret_(TlFetchInt256::parse(p))
+#undef FAIL
+{}
+
+void adnl_proxyToFastHash::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(ip_, s);
+  TlStoreBinary::store(port_, s);
+  TlStoreBinary::store(date_, s);
+  TlStoreBinary::store(data_hash_, s);
+  TlStoreBinary::store(shared_secret_, s);
+}
+
+void adnl_proxyToFastHash::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(ip_, s);
+  TlStoreBinary::store(port_, s);
+  TlStoreBinary::store(date_, s);
+  TlStoreBinary::store(data_hash_, s);
+  TlStoreBinary::store(shared_secret_, s);
+}
+
+void adnl_proxyToFastHash::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "adnl_proxyToFastHash");
+    s.store_field("ip", ip_);
+    s.store_field("port", port_);
+    s.store_field("date", date_);
+    s.store_field("data_hash", data_hash_);
+    s.store_field("shared_secret", shared_secret_);
+    s.store_class_end();
+  }
+}
+
+adnl_proxyToFast::adnl_proxyToFast()
+  : ip_()
+  , port_()
+  , date_()
+  , signature_()
+{}
+
+adnl_proxyToFast::adnl_proxyToFast(std::int32_t ip_, std::int32_t port_, std::int32_t date_, td::Bits256 const &signature_)
+  : ip_(ip_)
+  , port_(port_)
+  , date_(date_)
+  , signature_(signature_)
+{}
+
+const std::int32_t adnl_proxyToFast::ID;
+
+object_ptr<adnl_proxyToFast> adnl_proxyToFast::fetch(td::TlParser &p) {
+  return make_object<adnl_proxyToFast>(p);
+}
+
+adnl_proxyToFast::adnl_proxyToFast(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : ip_(TlFetchInt::parse(p))
+  , port_(TlFetchInt::parse(p))
+  , date_(TlFetchInt::parse(p))
+  , signature_(TlFetchInt256::parse(p))
+#undef FAIL
+{}
+
+void adnl_proxyToFast::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(ip_, s);
+  TlStoreBinary::store(port_, s);
+  TlStoreBinary::store(date_, s);
+  TlStoreBinary::store(signature_, s);
+}
+
+void adnl_proxyToFast::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(ip_, s);
+  TlStoreBinary::store(port_, s);
+  TlStoreBinary::store(date_, s);
+  TlStoreBinary::store(signature_, s);
+}
+
+void adnl_proxyToFast::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "adnl_proxyToFast");
+    s.store_field("ip", ip_);
+    s.store_field("port", port_);
+    s.store_field("date", date_);
+    s.store_field("signature", signature_);
+    s.store_class_end();
+  }
+}
+
 adnl_config_global::adnl_config_global()
   : static_nodes_()
 {}
@@ -3954,13 +4173,15 @@ void control_config_local::store(td::TlStorerToString &s, const char *field_name
 }
 
 db_candidate::db_candidate()
-  : id_()
+  : source_()
+  , id_()
   , data_()
   , collated_data_()
 {}
 
-db_candidate::db_candidate(object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&data_, td::BufferSlice &&collated_data_)
-  : id_(std::move(id_))
+db_candidate::db_candidate(object_ptr<PublicKey> &&source_, object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&data_, td::BufferSlice &&collated_data_)
+  : source_(std::move(source_))
+  , id_(std::move(id_))
   , data_(std::move(data_))
   , collated_data_(std::move(collated_data_))
 {}
@@ -3973,7 +4194,8 @@ object_ptr<db_candidate> db_candidate::fetch(td::TlParser &p) {
 
 db_candidate::db_candidate(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : id_(TlFetchObject<tonNode_blockIdExt>::parse(p))
+  : source_(TlFetchObject<PublicKey>::parse(p))
+  , id_(TlFetchObject<tonNode_blockIdExt>::parse(p))
   , data_(TlFetchBytes<td::BufferSlice>::parse(p))
   , collated_data_(TlFetchBytes<td::BufferSlice>::parse(p))
 #undef FAIL
@@ -3981,6 +4203,7 @@ db_candidate::db_candidate(td::TlParser &p)
 
 void db_candidate::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(source_, s);
   TlStoreObject::store(id_, s);
   TlStoreString::store(data_, s);
   TlStoreString::store(collated_data_, s);
@@ -3988,6 +4211,7 @@ void db_candidate::store(td::TlStorerCalcLength &s) const {
 
 void db_candidate::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(source_, s);
   TlStoreObject::store(id_, s);
   TlStoreString::store(data_, s);
   TlStoreString::store(collated_data_, s);
@@ -3996,6 +4220,7 @@ void db_candidate::store(td::TlStorerUnsafe &s) const {
 void db_candidate::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "db_candidate");
+    if (source_ == nullptr) { s.store_field("source", "null"); } else { source_->store(s, "source"); }
     if (id_ == nullptr) { s.store_field("id", "null"); } else { id_->store(s, "id"); }
     s.store_bytes_field("data", data_);
     s.store_bytes_field("collated_data", collated_data_);
@@ -4344,12 +4569,14 @@ void db_blockdb_value::store(td::TlStorerToString &s, const char *field_name) co
 }
 
 db_candidate_id::db_candidate_id()
-  : id_()
+  : source_()
+  , id_()
   , collated_data_file_hash_()
 {}
 
-db_candidate_id::db_candidate_id(object_ptr<tonNode_blockIdExt> &&id_, td::Bits256 const &collated_data_file_hash_)
-  : id_(std::move(id_))
+db_candidate_id::db_candidate_id(object_ptr<PublicKey> &&source_, object_ptr<tonNode_blockIdExt> &&id_, td::Bits256 const &collated_data_file_hash_)
+  : source_(std::move(source_))
+  , id_(std::move(id_))
   , collated_data_file_hash_(collated_data_file_hash_)
 {}
 
@@ -4361,19 +4588,22 @@ object_ptr<db_candidate_id> db_candidate_id::fetch(td::TlParser &p) {
 
 db_candidate_id::db_candidate_id(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : id_(TlFetchObject<tonNode_blockIdExt>::parse(p))
+  : source_(TlFetchObject<PublicKey>::parse(p))
+  , id_(TlFetchObject<tonNode_blockIdExt>::parse(p))
   , collated_data_file_hash_(TlFetchInt256::parse(p))
 #undef FAIL
 {}
 
 void db_candidate_id::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(source_, s);
   TlStoreObject::store(id_, s);
   TlStoreBinary::store(collated_data_file_hash_, s);
 }
 
 void db_candidate_id::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(source_, s);
   TlStoreObject::store(id_, s);
   TlStoreBinary::store(collated_data_file_hash_, s);
 }
@@ -4381,6 +4611,7 @@ void db_candidate_id::store(td::TlStorerUnsafe &s) const {
 void db_candidate_id::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "db_candidate_id");
+    if (source_ == nullptr) { s.store_field("source", "null"); } else { source_->store(s, "source"); }
     if (id_ == nullptr) { s.store_field("id", "null"); } else { id_->store(s, "id"); }
     s.store_field("collated_data_file_hash", collated_data_file_hash_);
     s.store_class_end();
@@ -6651,25 +6882,37 @@ void dummyworkchain0_config_global::store(td::TlStorerToString &s, const char *f
   }
 }
 
+object_ptr<engine_Addr> engine_Addr::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  int constructor = p.fetch_int();
+  switch (constructor) {
+    case engine_addr::ID:
+      return engine_addr::fetch(p);
+    case engine_addrProxy::ID:
+      return engine_addrProxy::fetch(p);
+    default:
+      FAIL(PSTRING() << "Unknown constructor found " << td::format::as_hex(constructor));
+  }
+#undef FAIL
+}
+
 engine_addr::engine_addr()
   : ip_()
   , port_()
-  , is_proxy_()
   , categories_()
   , priority_categories_()
 {}
 
-engine_addr::engine_addr(std::int32_t ip_, std::int32_t port_, bool is_proxy_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_)
+engine_addr::engine_addr(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_)
   : ip_(ip_)
   , port_(port_)
-  , is_proxy_(is_proxy_)
   , categories_(std::move(categories_))
   , priority_categories_(std::move(priority_categories_))
 {}
 
 const std::int32_t engine_addr::ID;
 
-object_ptr<engine_addr> engine_addr::fetch(td::TlParser &p) {
+object_ptr<engine_Addr> engine_addr::fetch(td::TlParser &p) {
   return make_object<engine_addr>(p);
 }
 
@@ -6677,7 +6920,6 @@ engine_addr::engine_addr(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
   : ip_(TlFetchInt::parse(p))
   , port_(TlFetchInt::parse(p))
-  , is_proxy_(TlFetchBool::parse(p))
   , categories_(TlFetchVector<TlFetchInt>::parse(p))
   , priority_categories_(TlFetchVector<TlFetchInt>::parse(p))
 #undef FAIL
@@ -6687,7 +6929,6 @@ void engine_addr::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
   TlStoreBinary::store(ip_, s);
   TlStoreBinary::store(port_, s);
-  TlStoreBool::store(is_proxy_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
   TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
@@ -6696,7 +6937,6 @@ void engine_addr::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
   TlStoreBinary::store(ip_, s);
   TlStoreBinary::store(port_, s);
-  TlStoreBool::store(is_proxy_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
   TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
@@ -6706,7 +6946,80 @@ void engine_addr::store(td::TlStorerToString &s, const char *field_name) const {
     s.store_class_begin(field_name, "engine_addr");
     s.store_field("ip", ip_);
     s.store_field("port", port_);
-    s.store_field("is_proxy", is_proxy_);
+    { const std::vector<std::int32_t> &v = categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    { const std::vector<std::int32_t> &v = priority_categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("priority_categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    s.store_class_end();
+  }
+}
+
+engine_addrProxy::engine_addrProxy()
+  : in_ip_()
+  , in_port_()
+  , out_ip_()
+  , out_port_()
+  , proxy_type_()
+  , categories_()
+  , priority_categories_()
+{}
+
+engine_addrProxy::engine_addrProxy(std::int32_t in_ip_, std::int32_t in_port_, std::int32_t out_ip_, std::int32_t out_port_, object_ptr<adnl_Proxy> &&proxy_type_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_)
+  : in_ip_(in_ip_)
+  , in_port_(in_port_)
+  , out_ip_(out_ip_)
+  , out_port_(out_port_)
+  , proxy_type_(std::move(proxy_type_))
+  , categories_(std::move(categories_))
+  , priority_categories_(std::move(priority_categories_))
+{}
+
+const std::int32_t engine_addrProxy::ID;
+
+object_ptr<engine_Addr> engine_addrProxy::fetch(td::TlParser &p) {
+  return make_object<engine_addrProxy>(p);
+}
+
+engine_addrProxy::engine_addrProxy(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : in_ip_(TlFetchInt::parse(p))
+  , in_port_(TlFetchInt::parse(p))
+  , out_ip_(TlFetchInt::parse(p))
+  , out_port_(TlFetchInt::parse(p))
+  , proxy_type_(TlFetchObject<adnl_Proxy>::parse(p))
+  , categories_(TlFetchVector<TlFetchInt>::parse(p))
+  , priority_categories_(TlFetchVector<TlFetchInt>::parse(p))
+#undef FAIL
+{}
+
+void engine_addrProxy::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(in_ip_, s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_type_, s);
+  TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
+}
+
+void engine_addrProxy::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(in_ip_, s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_type_, s);
+  TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
+}
+
+void engine_addrProxy::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_addrProxy");
+    s.store_field("in_ip", in_ip_);
+    s.store_field("in_port", in_port_);
+    s.store_field("out_ip", out_ip_);
+    s.store_field("out_port", out_port_);
+    if (proxy_type_ == nullptr) { s.store_field("proxy_type", "null"); } else { proxy_type_->store(s, "proxy_type"); }
     { const std::vector<std::int32_t> &v = categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
     { const std::vector<std::int32_t> &v = priority_categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("priority_categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
     s.store_class_end();
@@ -6975,13 +7288,15 @@ engine_validator::engine_validator()
   : id_()
   , temp_keys_()
   , adnl_addrs_()
+  , election_date_()
   , expire_at_()
 {}
 
-engine_validator::engine_validator(td::Bits256 const &id_, std::vector<object_ptr<engine_validatorTempKey>> &&temp_keys_, std::vector<object_ptr<engine_validatorAdnlAddress>> &&adnl_addrs_, std::int32_t expire_at_)
+engine_validator::engine_validator(td::Bits256 const &id_, std::vector<object_ptr<engine_validatorTempKey>> &&temp_keys_, std::vector<object_ptr<engine_validatorAdnlAddress>> &&adnl_addrs_, std::int32_t election_date_, std::int32_t expire_at_)
   : id_(id_)
   , temp_keys_(std::move(temp_keys_))
   , adnl_addrs_(std::move(adnl_addrs_))
+  , election_date_(election_date_)
   , expire_at_(expire_at_)
 {}
 
@@ -6996,6 +7311,7 @@ engine_validator::engine_validator(td::TlParser &p)
   : id_(TlFetchInt256::parse(p))
   , temp_keys_(TlFetchVector<TlFetchObject<engine_validatorTempKey>>::parse(p))
   , adnl_addrs_(TlFetchVector<TlFetchObject<engine_validatorAdnlAddress>>::parse(p))
+  , election_date_(TlFetchInt::parse(p))
   , expire_at_(TlFetchInt::parse(p))
 #undef FAIL
 {}
@@ -7005,6 +7321,7 @@ void engine_validator::store(td::TlStorerCalcLength &s) const {
   TlStoreBinary::store(id_, s);
   TlStoreVector<TlStoreObject>::store(temp_keys_, s);
   TlStoreVector<TlStoreObject>::store(adnl_addrs_, s);
+  TlStoreBinary::store(election_date_, s);
   TlStoreBinary::store(expire_at_, s);
 }
 
@@ -7013,6 +7330,7 @@ void engine_validator::store(td::TlStorerUnsafe &s) const {
   TlStoreBinary::store(id_, s);
   TlStoreVector<TlStoreObject>::store(temp_keys_, s);
   TlStoreVector<TlStoreObject>::store(adnl_addrs_, s);
+  TlStoreBinary::store(election_date_, s);
   TlStoreBinary::store(expire_at_, s);
 }
 
@@ -7022,6 +7340,7 @@ void engine_validator::store(td::TlStorerToString &s, const char *field_name) co
     s.store_field("id", id_);
     { const std::vector<object_ptr<engine_validatorTempKey>> &v = temp_keys_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("temp_keys", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
     { const std::vector<object_ptr<engine_validatorAdnlAddress>> &v = adnl_addrs_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("adnl_addrs", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
+    s.store_field("election_date", election_date_);
     s.store_field("expire_at", expire_at_);
     s.store_class_end();
   }
@@ -7115,6 +7434,106 @@ void engine_validatorTempKey::store(td::TlStorerToString &s, const char *field_n
   }
 }
 
+engine_adnlProxy_config::engine_adnlProxy_config()
+  : ports_()
+{}
+
+engine_adnlProxy_config::engine_adnlProxy_config(std::vector<object_ptr<engine_adnlProxy_port>> &&ports_)
+  : ports_(std::move(ports_))
+{}
+
+const std::int32_t engine_adnlProxy_config::ID;
+
+object_ptr<engine_adnlProxy_config> engine_adnlProxy_config::fetch(td::TlParser &p) {
+  return make_object<engine_adnlProxy_config>(p);
+}
+
+engine_adnlProxy_config::engine_adnlProxy_config(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : ports_(TlFetchVector<TlFetchObject<engine_adnlProxy_port>>::parse(p))
+#undef FAIL
+{}
+
+void engine_adnlProxy_config::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreVector<TlStoreObject>::store(ports_, s);
+}
+
+void engine_adnlProxy_config::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreVector<TlStoreObject>::store(ports_, s);
+}
+
+void engine_adnlProxy_config::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_adnlProxy_config");
+    { const std::vector<object_ptr<engine_adnlProxy_port>> &v = ports_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("ports", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
+    s.store_class_end();
+  }
+}
+
+engine_adnlProxy_port::engine_adnlProxy_port()
+  : in_port_()
+  , out_port_()
+  , dst_ip_()
+  , dst_port_()
+  , proxy_type_()
+{}
+
+engine_adnlProxy_port::engine_adnlProxy_port(std::int32_t in_port_, std::int32_t out_port_, std::int32_t dst_ip_, std::int32_t dst_port_, object_ptr<adnl_Proxy> &&proxy_type_)
+  : in_port_(in_port_)
+  , out_port_(out_port_)
+  , dst_ip_(dst_ip_)
+  , dst_port_(dst_port_)
+  , proxy_type_(std::move(proxy_type_))
+{}
+
+const std::int32_t engine_adnlProxy_port::ID;
+
+object_ptr<engine_adnlProxy_port> engine_adnlProxy_port::fetch(td::TlParser &p) {
+  return make_object<engine_adnlProxy_port>(p);
+}
+
+engine_adnlProxy_port::engine_adnlProxy_port(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : in_port_(TlFetchInt::parse(p))
+  , out_port_(TlFetchInt::parse(p))
+  , dst_ip_(TlFetchInt::parse(p))
+  , dst_port_(TlFetchInt::parse(p))
+  , proxy_type_(TlFetchObject<adnl_Proxy>::parse(p))
+#undef FAIL
+{}
+
+void engine_adnlProxy_port::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBinary::store(dst_ip_, s);
+  TlStoreBinary::store(dst_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_type_, s);
+}
+
+void engine_adnlProxy_port::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBinary::store(dst_ip_, s);
+  TlStoreBinary::store(dst_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_type_, s);
+}
+
+void engine_adnlProxy_port::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_adnlProxy_port");
+    s.store_field("in_port", in_port_);
+    s.store_field("out_port", out_port_);
+    s.store_field("dst_ip", dst_ip_);
+    s.store_field("dst_port", dst_port_);
+    if (proxy_type_ == nullptr) { s.store_field("proxy_type", "null"); } else { proxy_type_->store(s, "proxy_type"); }
+    s.store_class_end();
+  }
+}
+
 engine_dht_config::engine_dht_config()
   : dht_()
   , gc_()
@@ -7160,7 +7579,8 @@ void engine_dht_config::store(td::TlStorerToString &s, const char *field_name) c
 }
 
 engine_validator_config::engine_validator_config()
-  : addrs_()
+  : out_port_()
+  , addrs_()
   , adnl_()
   , dht_()
   , validators_()
@@ -7170,8 +7590,9 @@ engine_validator_config::engine_validator_config()
   , gc_()
 {}
 
-engine_validator_config::engine_validator_config(std::vector<object_ptr<engine_addr>> &&addrs_, std::vector<object_ptr<engine_adnl>> &&adnl_, std::vector<object_ptr<engine_dht>> &&dht_, std::vector<object_ptr<engine_validator>> &&validators_, td::Bits256 const &fullnode_, std::vector<object_ptr<engine_liteServer>> &&liteservers_, std::vector<object_ptr<engine_controlInterface>> &&control_, object_ptr<engine_gc> &&gc_)
-  : addrs_(std::move(addrs_))
+engine_validator_config::engine_validator_config(std::int32_t out_port_, std::vector<object_ptr<engine_Addr>> &&addrs_, std::vector<object_ptr<engine_adnl>> &&adnl_, std::vector<object_ptr<engine_dht>> &&dht_, std::vector<object_ptr<engine_validator>> &&validators_, td::Bits256 const &fullnode_, std::vector<object_ptr<engine_liteServer>> &&liteservers_, std::vector<object_ptr<engine_controlInterface>> &&control_, object_ptr<engine_gc> &&gc_)
+  : out_port_(out_port_)
+  , addrs_(std::move(addrs_))
   , adnl_(std::move(adnl_))
   , dht_(std::move(dht_))
   , validators_(std::move(validators_))
@@ -7189,7 +7610,8 @@ object_ptr<engine_validator_config> engine_validator_config::fetch(td::TlParser 
 
 engine_validator_config::engine_validator_config(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : addrs_(TlFetchVector<TlFetchObject<engine_addr>>::parse(p))
+  : out_port_(TlFetchInt::parse(p))
+  , addrs_(TlFetchVector<TlFetchObject<engine_Addr>>::parse(p))
   , adnl_(TlFetchVector<TlFetchObject<engine_adnl>>::parse(p))
   , dht_(TlFetchVector<TlFetchObject<engine_dht>>::parse(p))
   , validators_(TlFetchVector<TlFetchObject<engine_validator>>::parse(p))
@@ -7202,7 +7624,8 @@ engine_validator_config::engine_validator_config(td::TlParser &p)
 
 void engine_validator_config::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  TlStoreVector<TlStoreObject>::store(addrs_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreVector<TlStoreBoxedUnknown<TlStoreObject>>::store(addrs_, s);
   TlStoreVector<TlStoreObject>::store(adnl_, s);
   TlStoreVector<TlStoreObject>::store(dht_, s);
   TlStoreVector<TlStoreObject>::store(validators_, s);
@@ -7214,7 +7637,8 @@ void engine_validator_config::store(td::TlStorerCalcLength &s) const {
 
 void engine_validator_config::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  TlStoreVector<TlStoreObject>::store(addrs_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreVector<TlStoreBoxedUnknown<TlStoreObject>>::store(addrs_, s);
   TlStoreVector<TlStoreObject>::store(adnl_, s);
   TlStoreVector<TlStoreObject>::store(dht_, s);
   TlStoreVector<TlStoreObject>::store(validators_, s);
@@ -7227,7 +7651,8 @@ void engine_validator_config::store(td::TlStorerUnsafe &s) const {
 void engine_validator_config::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_config");
-    { const std::vector<object_ptr<engine_addr>> &v = addrs_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("addrs", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
+    s.store_field("out_port", out_port_);
+    { const std::vector<object_ptr<engine_Addr>> &v = addrs_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("addrs", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
     { const std::vector<object_ptr<engine_adnl>> &v = adnl_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("adnl", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
     { const std::vector<object_ptr<engine_dht>> &v = dht_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("dht", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
     { const std::vector<object_ptr<engine_validator>> &v = validators_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("validators", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
@@ -7279,6 +7704,150 @@ void engine_validator_controlQueryError::store(td::TlStorerToString &s, const ch
     s.store_class_begin(field_name, "engine_validator_controlQueryError");
     s.store_field("code", code_);
     s.store_field("message", message_);
+    s.store_class_end();
+  }
+}
+
+engine_validator_electionBid::engine_validator_electionBid()
+  : election_date_()
+  , perm_key_()
+  , adnl_addr_()
+  , to_send_payload_()
+{}
+
+engine_validator_electionBid::engine_validator_electionBid(std::int32_t election_date_, td::Bits256 const &perm_key_, td::Bits256 const &adnl_addr_, td::BufferSlice &&to_send_payload_)
+  : election_date_(election_date_)
+  , perm_key_(perm_key_)
+  , adnl_addr_(adnl_addr_)
+  , to_send_payload_(std::move(to_send_payload_))
+{}
+
+const std::int32_t engine_validator_electionBid::ID;
+
+object_ptr<engine_validator_electionBid> engine_validator_electionBid::fetch(td::TlParser &p) {
+  return make_object<engine_validator_electionBid>(p);
+}
+
+engine_validator_electionBid::engine_validator_electionBid(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : election_date_(TlFetchInt::parse(p))
+  , perm_key_(TlFetchInt256::parse(p))
+  , adnl_addr_(TlFetchInt256::parse(p))
+  , to_send_payload_(TlFetchBytes<td::BufferSlice>::parse(p))
+#undef FAIL
+{}
+
+void engine_validator_electionBid::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(election_date_, s);
+  TlStoreBinary::store(perm_key_, s);
+  TlStoreBinary::store(adnl_addr_, s);
+  TlStoreString::store(to_send_payload_, s);
+}
+
+void engine_validator_electionBid::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(election_date_, s);
+  TlStoreBinary::store(perm_key_, s);
+  TlStoreBinary::store(adnl_addr_, s);
+  TlStoreString::store(to_send_payload_, s);
+}
+
+void engine_validator_electionBid::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_validator_electionBid");
+    s.store_field("election_date", election_date_);
+    s.store_field("perm_key", perm_key_);
+    s.store_field("adnl_addr", adnl_addr_);
+    s.store_bytes_field("to_send_payload", to_send_payload_);
+    s.store_class_end();
+  }
+}
+
+validator_groupMember::validator_groupMember()
+  : public_key_hash_()
+  , adnl_()
+  , weight_()
+{}
+
+validator_groupMember::validator_groupMember(td::Bits256 const &public_key_hash_, td::Bits256 const &adnl_, std::int64_t weight_)
+  : public_key_hash_(public_key_hash_)
+  , adnl_(adnl_)
+  , weight_(weight_)
+{}
+
+const std::int32_t validator_groupMember::ID;
+
+object_ptr<validator_groupMember> validator_groupMember::fetch(td::TlParser &p) {
+  return make_object<validator_groupMember>(p);
+}
+
+validator_groupMember::validator_groupMember(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : public_key_hash_(TlFetchInt256::parse(p))
+  , adnl_(TlFetchInt256::parse(p))
+  , weight_(TlFetchLong::parse(p))
+#undef FAIL
+{}
+
+void validator_groupMember::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(public_key_hash_, s);
+  TlStoreBinary::store(adnl_, s);
+  TlStoreBinary::store(weight_, s);
+}
+
+void validator_groupMember::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(public_key_hash_, s);
+  TlStoreBinary::store(adnl_, s);
+  TlStoreBinary::store(weight_, s);
+}
+
+void validator_groupMember::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "validator_groupMember");
+    s.store_field("public_key_hash", public_key_hash_);
+    s.store_field("adnl", adnl_);
+    s.store_field("weight", weight_);
+    s.store_class_end();
+  }
+}
+
+engine_validator_jsonConfig::engine_validator_jsonConfig()
+  : data_()
+{}
+
+engine_validator_jsonConfig::engine_validator_jsonConfig(std::string const &data_)
+  : data_(std::move(data_))
+{}
+
+const std::int32_t engine_validator_jsonConfig::ID;
+
+object_ptr<engine_validator_jsonConfig> engine_validator_jsonConfig::fetch(td::TlParser &p) {
+  return make_object<engine_validator_jsonConfig>(p);
+}
+
+engine_validator_jsonConfig::engine_validator_jsonConfig(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : data_(TlFetchString<std::string>::parse(p))
+#undef FAIL
+{}
+
+void engine_validator_jsonConfig::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreString::store(data_, s);
+}
+
+void engine_validator_jsonConfig::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreString::store(data_, s);
+}
+
+void engine_validator_jsonConfig::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_validator_jsonConfig");
+    s.store_field("data", data_);
     s.store_class_end();
   }
 }
@@ -7716,10 +8285,12 @@ void id_config_local::store(td::TlStorerToString &s, const char *field_name) con
 
 liteclient_config_global::liteclient_config_global()
   : liteservers_()
+  , validator_()
 {}
 
-liteclient_config_global::liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_)
+liteclient_config_global::liteclient_config_global(std::vector<object_ptr<liteserver_desc>> &&liteservers_, object_ptr<validator_config_global> &&validator_)
   : liteservers_(std::move(liteservers_))
+  , validator_(std::move(validator_))
 {}
 
 const std::int32_t liteclient_config_global::ID;
@@ -7731,23 +8302,27 @@ object_ptr<liteclient_config_global> liteclient_config_global::fetch(td::TlParse
 liteclient_config_global::liteclient_config_global(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
   : liteservers_(TlFetchVector<TlFetchObject<liteserver_desc>>::parse(p))
+  , validator_(TlFetchObject<validator_config_global>::parse(p))
 #undef FAIL
 {}
 
 void liteclient_config_global::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
   TlStoreVector<TlStoreObject>::store(liteservers_, s);
+  TlStoreObject::store(validator_, s);
 }
 
 void liteclient_config_global::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
   TlStoreVector<TlStoreObject>::store(liteservers_, s);
+  TlStoreObject::store(validator_, s);
 }
 
 void liteclient_config_global::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "liteclient_config_global");
     { const std::vector<object_ptr<liteserver_desc>> &v = liteservers_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("liteservers", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
+    if (validator_ == nullptr) { s.store_field("validator", "null"); } else { validator_->store(s, "validator"); }
     s.store_class_end();
   }
 }
@@ -10492,12 +11067,14 @@ tonNode_sessionId::tonNode_sessionId()
   : workchain_()
   , shard_()
   , cc_seqno_()
+  , opts_hash_()
 {}
 
-tonNode_sessionId::tonNode_sessionId(std::int32_t workchain_, std::int64_t shard_, std::int32_t cc_seqno_)
+tonNode_sessionId::tonNode_sessionId(std::int32_t workchain_, std::int64_t shard_, std::int32_t cc_seqno_, td::Bits256 const &opts_hash_)
   : workchain_(workchain_)
   , shard_(shard_)
   , cc_seqno_(cc_seqno_)
+  , opts_hash_(opts_hash_)
 {}
 
 const std::int32_t tonNode_sessionId::ID;
@@ -10511,6 +11088,7 @@ tonNode_sessionId::tonNode_sessionId(td::TlParser &p)
   : workchain_(TlFetchInt::parse(p))
   , shard_(TlFetchLong::parse(p))
   , cc_seqno_(TlFetchInt::parse(p))
+  , opts_hash_(TlFetchInt256::parse(p))
 #undef FAIL
 {}
 
@@ -10519,6 +11097,7 @@ void tonNode_sessionId::store(td::TlStorerCalcLength &s) const {
   TlStoreBinary::store(workchain_, s);
   TlStoreBinary::store(shard_, s);
   TlStoreBinary::store(cc_seqno_, s);
+  TlStoreBinary::store(opts_hash_, s);
 }
 
 void tonNode_sessionId::store(td::TlStorerUnsafe &s) const {
@@ -10526,6 +11105,7 @@ void tonNode_sessionId::store(td::TlStorerUnsafe &s) const {
   TlStoreBinary::store(workchain_, s);
   TlStoreBinary::store(shard_, s);
   TlStoreBinary::store(cc_seqno_, s);
+  TlStoreBinary::store(opts_hash_, s);
 }
 
 void tonNode_sessionId::store(td::TlStorerToString &s, const char *field_name) const {
@@ -10534,6 +11114,7 @@ void tonNode_sessionId::store(td::TlStorerToString &s, const char *field_name) c
     s.store_field("workchain", workchain_);
     s.store_field("shard", shard_);
     s.store_field("cc_seqno", cc_seqno_);
+    s.store_field("opts_hash", opts_hash_);
     s.store_class_end();
   }
 }
@@ -10634,6 +11215,68 @@ void tonNode_zeroStateIdExt::store(td::TlStorerToString &s, const char *field_na
     s.store_field("workchain", workchain_);
     s.store_field("root_hash", root_hash_);
     s.store_field("file_hash", file_hash_);
+    s.store_class_end();
+  }
+}
+
+validator_group::validator_group()
+  : workchain_()
+  , shard_()
+  , catchain_seqno_()
+  , config_hash_()
+  , members_()
+{}
+
+validator_group::validator_group(std::int32_t workchain_, std::int64_t shard_, std::int32_t catchain_seqno_, td::Bits256 const &config_hash_, std::vector<object_ptr<validator_groupMember>> &&members_)
+  : workchain_(workchain_)
+  , shard_(shard_)
+  , catchain_seqno_(catchain_seqno_)
+  , config_hash_(config_hash_)
+  , members_(std::move(members_))
+{}
+
+const std::int32_t validator_group::ID;
+
+object_ptr<validator_group> validator_group::fetch(td::TlParser &p) {
+  return make_object<validator_group>(p);
+}
+
+validator_group::validator_group(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : workchain_(TlFetchInt::parse(p))
+  , shard_(TlFetchLong::parse(p))
+  , catchain_seqno_(TlFetchInt::parse(p))
+  , config_hash_(TlFetchInt256::parse(p))
+  , members_(TlFetchVector<TlFetchObject<validator_groupMember>>::parse(p))
+#undef FAIL
+{}
+
+void validator_group::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(workchain_, s);
+  TlStoreBinary::store(shard_, s);
+  TlStoreBinary::store(catchain_seqno_, s);
+  TlStoreBinary::store(config_hash_, s);
+  TlStoreVector<TlStoreObject>::store(members_, s);
+}
+
+void validator_group::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  TlStoreBinary::store(workchain_, s);
+  TlStoreBinary::store(shard_, s);
+  TlStoreBinary::store(catchain_seqno_, s);
+  TlStoreBinary::store(config_hash_, s);
+  TlStoreVector<TlStoreObject>::store(members_, s);
+}
+
+void validator_group::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "validator_group");
+    s.store_field("workchain", workchain_);
+    s.store_field("shard", shard_);
+    s.store_field("catchain_seqno", catchain_seqno_);
+    s.store_field("config_hash", config_hash_);
+    { const std::vector<object_ptr<validator_groupMember>> &v = members_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("members", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { if (v[i] == nullptr) { s.store_field("", "null"); } else { v[i]->store(s, ""); } } s.store_class_end(); }
     s.store_class_end();
   }
 }
@@ -10946,58 +11589,82 @@ void validatorSession_candidateId::store(td::TlStorerToString &s, const char *fi
   }
 }
 
-validatorSession_id::validatorSession_id()
-  : slice_()
-  , start_time_()
-  , end_time_()
-  , participants_()
+validatorSession_config::validatorSession_config()
+  : catchain_idle_timeout_()
+  , catchain_max_deps_()
+  , round_candidates_()
+  , next_candidate_delay_()
+  , round_attempt_duration_()
+  , max_round_attempts_()
+  , max_block_size_()
+  , max_collated_data_size_()
 {}
 
-validatorSession_id::validatorSession_id(td::Bits256 const &slice_, std::int32_t start_time_, std::int32_t end_time_, std::vector<td::Bits256> &&participants_)
-  : slice_(slice_)
-  , start_time_(start_time_)
-  , end_time_(end_time_)
-  , participants_(std::move(participants_))
+validatorSession_config::validatorSession_config(double catchain_idle_timeout_, std::int32_t catchain_max_deps_, std::int32_t round_candidates_, double next_candidate_delay_, std::int32_t round_attempt_duration_, std::int32_t max_round_attempts_, std::int32_t max_block_size_, std::int32_t max_collated_data_size_)
+  : catchain_idle_timeout_(catchain_idle_timeout_)
+  , catchain_max_deps_(catchain_max_deps_)
+  , round_candidates_(round_candidates_)
+  , next_candidate_delay_(next_candidate_delay_)
+  , round_attempt_duration_(round_attempt_duration_)
+  , max_round_attempts_(max_round_attempts_)
+  , max_block_size_(max_block_size_)
+  , max_collated_data_size_(max_collated_data_size_)
 {}
 
-const std::int32_t validatorSession_id::ID;
+const std::int32_t validatorSession_config::ID;
 
-object_ptr<validatorSession_id> validatorSession_id::fetch(td::TlParser &p) {
-  return make_object<validatorSession_id>(p);
+object_ptr<validatorSession_config> validatorSession_config::fetch(td::TlParser &p) {
+  return make_object<validatorSession_config>(p);
 }
 
-validatorSession_id::validatorSession_id(td::TlParser &p)
+validatorSession_config::validatorSession_config(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : slice_(TlFetchInt256::parse(p))
-  , start_time_(TlFetchInt::parse(p))
-  , end_time_(TlFetchInt::parse(p))
-  , participants_(TlFetchVector<TlFetchInt256>::parse(p))
+  : catchain_idle_timeout_(TlFetchDouble::parse(p))
+  , catchain_max_deps_(TlFetchInt::parse(p))
+  , round_candidates_(TlFetchInt::parse(p))
+  , next_candidate_delay_(TlFetchDouble::parse(p))
+  , round_attempt_duration_(TlFetchInt::parse(p))
+  , max_round_attempts_(TlFetchInt::parse(p))
+  , max_block_size_(TlFetchInt::parse(p))
+  , max_collated_data_size_(TlFetchInt::parse(p))
 #undef FAIL
 {}
 
-void validatorSession_id::store(td::TlStorerCalcLength &s) const {
+void validatorSession_config::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  TlStoreBinary::store(slice_, s);
-  TlStoreBinary::store(start_time_, s);
-  TlStoreBinary::store(end_time_, s);
-  TlStoreVector<TlStoreBinary>::store(participants_, s);
+  TlStoreBinary::store(catchain_idle_timeout_, s);
+  TlStoreBinary::store(catchain_max_deps_, s);
+  TlStoreBinary::store(round_candidates_, s);
+  TlStoreBinary::store(next_candidate_delay_, s);
+  TlStoreBinary::store(round_attempt_duration_, s);
+  TlStoreBinary::store(max_round_attempts_, s);
+  TlStoreBinary::store(max_block_size_, s);
+  TlStoreBinary::store(max_collated_data_size_, s);
 }
 
-void validatorSession_id::store(td::TlStorerUnsafe &s) const {
+void validatorSession_config::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  TlStoreBinary::store(slice_, s);
-  TlStoreBinary::store(start_time_, s);
-  TlStoreBinary::store(end_time_, s);
-  TlStoreVector<TlStoreBinary>::store(participants_, s);
+  TlStoreBinary::store(catchain_idle_timeout_, s);
+  TlStoreBinary::store(catchain_max_deps_, s);
+  TlStoreBinary::store(round_candidates_, s);
+  TlStoreBinary::store(next_candidate_delay_, s);
+  TlStoreBinary::store(round_attempt_duration_, s);
+  TlStoreBinary::store(max_round_attempts_, s);
+  TlStoreBinary::store(max_block_size_, s);
+  TlStoreBinary::store(max_collated_data_size_, s);
 }
 
-void validatorSession_id::store(td::TlStorerToString &s, const char *field_name) const {
+void validatorSession_config::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
-    s.store_class_begin(field_name, "validatorSession_id");
-    s.store_field("slice", slice_);
-    s.store_field("start_time", start_time_);
-    s.store_field("end_time", end_time_);
-    { const std::vector<td::Bits256> &v = participants_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("participants", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    s.store_class_begin(field_name, "validatorSession_config");
+    s.store_field("catchain_idle_timeout", catchain_idle_timeout_);
+    s.store_field("catchain_max_deps", catchain_max_deps_);
+    s.store_field("round_candidates", round_candidates_);
+    s.store_field("next_candidate_delay", next_candidate_delay_);
+    s.store_field("round_attempt_duration", round_attempt_duration_);
+    s.store_field("max_round_attempts", max_round_attempts_);
+    s.store_field("max_block_size", max_block_size_);
+    s.store_field("max_collated_data_size", max_collated_data_size_);
     s.store_class_end();
   }
 }
@@ -11960,12 +12627,12 @@ dht_getSignedAddressList::dht_getSignedAddressList(td::TlParser &p)
 
 void dht_getSignedAddressList::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(960283782);
+  s.store_binary(-1451669267);
 }
 
 void dht_getSignedAddressList::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(960283782);
+  s.store_binary(-1451669267);
 }
 
 void dht_getSignedAddressList::store(td::TlStorerToString &s, const char *field_name) const {
@@ -11977,7 +12644,7 @@ void dht_getSignedAddressList::store(td::TlStorerToString &s, const char *field_
 
 dht_getSignedAddressList::ReturnType dht_getSignedAddressList::fetch_result(td::TlParser &p) {
 #define FAIL(error) p.set_error(error); return ReturnType()
-  return TlFetchBoxed<TlFetchObject<adnl_node>, 1800802949>::parse(p);
+  return TlFetchBoxed<TlFetchObject<dht_node>, -2074922424>::parse(p);
 #undef FAIL
 }
 
@@ -12450,15 +13117,23 @@ engine_validator_addLiteserver::ReturnType engine_validator_addLiteserver::fetch
 }
 
 engine_validator_addProxy::engine_validator_addProxy()
-  : ip_()
-  , port_()
+  : in_ip_()
+  , in_port_()
+  , out_ip_()
+  , out_port_()
+  , proxy_()
   , categories_()
+  , priority_categories_()
 {}
 
-engine_validator_addProxy::engine_validator_addProxy(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_)
-  : ip_(ip_)
-  , port_(port_)
+engine_validator_addProxy::engine_validator_addProxy(std::int32_t in_ip_, std::int32_t in_port_, std::int32_t out_ip_, std::int32_t out_port_, object_ptr<adnl_Proxy> &&proxy_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_)
+  : in_ip_(in_ip_)
+  , in_port_(in_port_)
+  , out_ip_(out_ip_)
+  , out_port_(out_port_)
+  , proxy_(std::move(proxy_))
   , categories_(std::move(categories_))
+  , priority_categories_(std::move(priority_categories_))
 {}
 
 const std::int32_t engine_validator_addProxy::ID;
@@ -12469,34 +13144,50 @@ object_ptr<engine_validator_addProxy> engine_validator_addProxy::fetch(td::TlPar
 
 engine_validator_addProxy::engine_validator_addProxy(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : ip_(TlFetchInt::parse(p))
-  , port_(TlFetchInt::parse(p))
+  : in_ip_(TlFetchInt::parse(p))
+  , in_port_(TlFetchInt::parse(p))
+  , out_ip_(TlFetchInt::parse(p))
+  , out_port_(TlFetchInt::parse(p))
+  , proxy_(TlFetchObject<adnl_Proxy>::parse(p))
   , categories_(TlFetchVector<TlFetchInt>::parse(p))
+  , priority_categories_(TlFetchVector<TlFetchInt>::parse(p))
 #undef FAIL
 {}
 
 void engine_validator_addProxy::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(-928278296);
-  TlStoreBinary::store(ip_, s);
-  TlStoreBinary::store(port_, s);
+  s.store_binary(-151178251);
+  TlStoreBinary::store(in_ip_, s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
 
 void engine_validator_addProxy::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(-928278296);
-  TlStoreBinary::store(ip_, s);
-  TlStoreBinary::store(port_, s);
+  s.store_binary(-151178251);
+  TlStoreBinary::store(in_ip_, s);
+  TlStoreBinary::store(in_port_, s);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
+  TlStoreBoxedUnknown<TlStoreObject>::store(proxy_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
 
 void engine_validator_addProxy::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_addProxy");
-    s.store_field("ip", ip_);
-    s.store_field("port", port_);
+    s.store_field("in_ip", in_ip_);
+    s.store_field("in_port", in_port_);
+    s.store_field("out_ip", out_ip_);
+    s.store_field("out_port", out_port_);
+    if (proxy_ == nullptr) { s.store_field("proxy", "null"); } else { proxy_->store(s, "proxy"); }
     { const std::vector<std::int32_t> &v = categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    { const std::vector<std::int32_t> &v = priority_categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("priority_categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
     s.store_class_end();
   }
 }
@@ -12567,11 +13258,13 @@ engine_validator_addValidatorAdnlAddress::ReturnType engine_validator_addValidat
 
 engine_validator_addValidatorPermanentKey::engine_validator_addValidatorPermanentKey()
   : key_hash_()
+  , election_date_()
   , ttl_()
 {}
 
-engine_validator_addValidatorPermanentKey::engine_validator_addValidatorPermanentKey(td::Bits256 const &key_hash_, std::int32_t ttl_)
+engine_validator_addValidatorPermanentKey::engine_validator_addValidatorPermanentKey(td::Bits256 const &key_hash_, std::int32_t election_date_, std::int32_t ttl_)
   : key_hash_(key_hash_)
+  , election_date_(election_date_)
   , ttl_(ttl_)
 {}
 
@@ -12584,21 +13277,24 @@ object_ptr<engine_validator_addValidatorPermanentKey> engine_validator_addValida
 engine_validator_addValidatorPermanentKey::engine_validator_addValidatorPermanentKey(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
   : key_hash_(TlFetchInt256::parse(p))
+  , election_date_(TlFetchInt::parse(p))
   , ttl_(TlFetchInt::parse(p))
 #undef FAIL
 {}
 
 void engine_validator_addValidatorPermanentKey::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(1925653418);
+  s.store_binary(-1844116104);
   TlStoreBinary::store(key_hash_, s);
+  TlStoreBinary::store(election_date_, s);
   TlStoreBinary::store(ttl_, s);
 }
 
 void engine_validator_addValidatorPermanentKey::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(1925653418);
+  s.store_binary(-1844116104);
   TlStoreBinary::store(key_hash_, s);
+  TlStoreBinary::store(election_date_, s);
   TlStoreBinary::store(ttl_, s);
 }
 
@@ -12606,6 +13302,7 @@ void engine_validator_addValidatorPermanentKey::store(td::TlStorerToString &s, c
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_addValidatorPermanentKey");
     s.store_field("key_hash", key_hash_);
+    s.store_field("election_date", election_date_);
     s.store_field("ttl", ttl_);
     s.store_class_end();
   }
@@ -12721,58 +13418,6 @@ engine_validator_changeFullNodeAdnlAddress::ReturnType engine_validator_changeFu
 #undef FAIL
 }
 
-engine_validator_changePassword::engine_validator_changePassword()
-  : old_password_()
-  , new_password_()
-{}
-
-engine_validator_changePassword::engine_validator_changePassword(td::BufferSlice &&old_password_, td::BufferSlice &&new_password_)
-  : old_password_(std::move(old_password_))
-  , new_password_(std::move(new_password_))
-{}
-
-const std::int32_t engine_validator_changePassword::ID;
-
-object_ptr<engine_validator_changePassword> engine_validator_changePassword::fetch(td::TlParser &p) {
-  return make_object<engine_validator_changePassword>(p);
-}
-
-engine_validator_changePassword::engine_validator_changePassword(td::TlParser &p)
-#define FAIL(error) p.set_error(error)
-  : old_password_(TlFetchBytes<td::BufferSlice>::parse(p))
-  , new_password_(TlFetchBytes<td::BufferSlice>::parse(p))
-#undef FAIL
-{}
-
-void engine_validator_changePassword::store(td::TlStorerCalcLength &s) const {
-  (void)sizeof(s);
-  s.store_binary(2123920564);
-  TlStoreString::store(old_password_, s);
-  TlStoreString::store(new_password_, s);
-}
-
-void engine_validator_changePassword::store(td::TlStorerUnsafe &s) const {
-  (void)sizeof(s);
-  s.store_binary(2123920564);
-  TlStoreString::store(old_password_, s);
-  TlStoreString::store(new_password_, s);
-}
-
-void engine_validator_changePassword::store(td::TlStorerToString &s, const char *field_name) const {
-  if (!LOG_IS_STRIPPED(ERROR)) {
-    s.store_class_begin(field_name, "engine_validator_changePassword");
-    s.store_bytes_field("old_password", old_password_);
-    s.store_bytes_field("new_password", new_password_);
-    s.store_class_end();
-  }
-}
-
-engine_validator_changePassword::ReturnType engine_validator_changePassword::fetch_result(td::TlParser &p) {
-#define FAIL(error) p.set_error(error); return ReturnType()
-  return TlFetchBoxed<TlFetchObject<engine_validator_success>, -1276860789>::parse(p);
-#undef FAIL
-}
-
 engine_validator_controlQuery::engine_validator_controlQuery()
   : data_()
 {}
@@ -12819,8 +13464,71 @@ engine_validator_controlQuery::ReturnType engine_validator_controlQuery::fetch_r
 #undef FAIL
 }
 
-engine_validator_delAdnlId::engine_validator_delAdnlId() {
+engine_validator_createElectionBid::engine_validator_createElectionBid()
+  : election_date_()
+  , election_addr_()
+  , wallet_()
+{}
+
+engine_validator_createElectionBid::engine_validator_createElectionBid(std::int32_t election_date_, std::string const &election_addr_, std::string const &wallet_)
+  : election_date_(election_date_)
+  , election_addr_(std::move(election_addr_))
+  , wallet_(std::move(wallet_))
+{}
+
+const std::int32_t engine_validator_createElectionBid::ID;
+
+object_ptr<engine_validator_createElectionBid> engine_validator_createElectionBid::fetch(td::TlParser &p) {
+  return make_object<engine_validator_createElectionBid>(p);
 }
+
+engine_validator_createElectionBid::engine_validator_createElectionBid(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+  : election_date_(TlFetchInt::parse(p))
+  , election_addr_(TlFetchString<std::string>::parse(p))
+  , wallet_(TlFetchString<std::string>::parse(p))
+#undef FAIL
+{}
+
+void engine_validator_createElectionBid::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  s.store_binary(-451038907);
+  TlStoreBinary::store(election_date_, s);
+  TlStoreString::store(election_addr_, s);
+  TlStoreString::store(wallet_, s);
+}
+
+void engine_validator_createElectionBid::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  s.store_binary(-451038907);
+  TlStoreBinary::store(election_date_, s);
+  TlStoreString::store(election_addr_, s);
+  TlStoreString::store(wallet_, s);
+}
+
+void engine_validator_createElectionBid::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "engine_validator_createElectionBid");
+    s.store_field("election_date", election_date_);
+    s.store_field("election_addr", election_addr_);
+    s.store_field("wallet", wallet_);
+    s.store_class_end();
+  }
+}
+
+engine_validator_createElectionBid::ReturnType engine_validator_createElectionBid::fetch_result(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return ReturnType()
+  return TlFetchBoxed<TlFetchObject<engine_validator_electionBid>, 598899261>::parse(p);
+#undef FAIL
+}
+
+engine_validator_delAdnlId::engine_validator_delAdnlId()
+  : key_hash_()
+{}
+
+engine_validator_delAdnlId::engine_validator_delAdnlId(td::Bits256 const &key_hash_)
+  : key_hash_(key_hash_)
+{}
 
 const std::int32_t engine_validator_delAdnlId::ID;
 
@@ -12830,24 +13538,26 @@ object_ptr<engine_validator_delAdnlId> engine_validator_delAdnlId::fetch(td::TlP
 
 engine_validator_delAdnlId::engine_validator_delAdnlId(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
+  : key_hash_(TlFetchInt256::parse(p))
 #undef FAIL
-{
-  (void)p;
-}
+{}
 
 void engine_validator_delAdnlId::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(1513520476);
+  s.store_binary(691696882);
+  TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delAdnlId::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(1513520476);
+  s.store_binary(691696882);
+  TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delAdnlId::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_delAdnlId");
+    s.store_field("key_hash", key_hash_);
     s.store_class_end();
   }
 }
@@ -12858,8 +13568,13 @@ engine_validator_delAdnlId::ReturnType engine_validator_delAdnlId::fetch_result(
 #undef FAIL
 }
 
-engine_validator_delDhtId::engine_validator_delDhtId() {
-}
+engine_validator_delDhtId::engine_validator_delDhtId()
+  : key_hash_()
+{}
+
+engine_validator_delDhtId::engine_validator_delDhtId(td::Bits256 const &key_hash_)
+  : key_hash_(key_hash_)
+{}
 
 const std::int32_t engine_validator_delDhtId::ID;
 
@@ -12869,24 +13584,26 @@ object_ptr<engine_validator_delDhtId> engine_validator_delDhtId::fetch(td::TlPar
 
 engine_validator_delDhtId::engine_validator_delDhtId(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
+  : key_hash_(TlFetchInt256::parse(p))
 #undef FAIL
-{
-  (void)p;
-}
+{}
 
 void engine_validator_delDhtId::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(-392037184);
+  s.store_binary(-2063770818);
+  TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delDhtId::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(-392037184);
+  s.store_binary(-2063770818);
+  TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delDhtId::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_delDhtId");
+    s.store_field("key_hash", key_hash_);
     s.store_class_end();
   }
 }
@@ -12962,15 +13679,17 @@ engine_validator_delListeningPort::ReturnType engine_validator_delListeningPort:
 }
 
 engine_validator_delProxy::engine_validator_delProxy()
-  : ip_()
-  , port_()
+  : out_ip_()
+  , out_port_()
   , categories_()
+  , priority_categories_()
 {}
 
-engine_validator_delProxy::engine_validator_delProxy(std::int32_t ip_, std::int32_t port_, std::vector<std::int32_t> &&categories_)
-  : ip_(ip_)
-  , port_(port_)
+engine_validator_delProxy::engine_validator_delProxy(std::int32_t out_ip_, std::int32_t out_port_, std::vector<std::int32_t> &&categories_, std::vector<std::int32_t> &&priority_categories_)
+  : out_ip_(out_ip_)
+  , out_port_(out_port_)
   , categories_(std::move(categories_))
+  , priority_categories_(std::move(priority_categories_))
 {}
 
 const std::int32_t engine_validator_delProxy::ID;
@@ -12981,34 +13700,38 @@ object_ptr<engine_validator_delProxy> engine_validator_delProxy::fetch(td::TlPar
 
 engine_validator_delProxy::engine_validator_delProxy(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : ip_(TlFetchInt::parse(p))
-  , port_(TlFetchInt::parse(p))
+  : out_ip_(TlFetchInt::parse(p))
+  , out_port_(TlFetchInt::parse(p))
   , categories_(TlFetchVector<TlFetchInt>::parse(p))
+  , priority_categories_(TlFetchVector<TlFetchInt>::parse(p))
 #undef FAIL
 {}
 
 void engine_validator_delProxy::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(-1614543923);
-  TlStoreBinary::store(ip_, s);
-  TlStoreBinary::store(port_, s);
+  s.store_binary(1970850941);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
 
 void engine_validator_delProxy::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(-1614543923);
-  TlStoreBinary::store(ip_, s);
-  TlStoreBinary::store(port_, s);
+  s.store_binary(1970850941);
+  TlStoreBinary::store(out_ip_, s);
+  TlStoreBinary::store(out_port_, s);
   TlStoreVector<TlStoreBinary>::store(categories_, s);
+  TlStoreVector<TlStoreBinary>::store(priority_categories_, s);
 }
 
 void engine_validator_delProxy::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_delProxy");
-    s.store_field("ip", ip_);
-    s.store_field("port", port_);
+    s.store_field("out_ip", out_ip_);
+    s.store_field("out_port", out_port_);
     { const std::vector<std::int32_t> &v = categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    { const std::vector<std::int32_t> &v = priority_categories_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("priority_categories", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
     s.store_class_end();
   }
 }
@@ -13020,11 +13743,13 @@ engine_validator_delProxy::ReturnType engine_validator_delProxy::fetch_result(td
 }
 
 engine_validator_delValidatorAdnlAddress::engine_validator_delValidatorAdnlAddress()
-  : key_hash_()
+  : permanent_key_hash_()
+  , key_hash_()
 {}
 
-engine_validator_delValidatorAdnlAddress::engine_validator_delValidatorAdnlAddress(td::Bits256 const &key_hash_)
-  : key_hash_(key_hash_)
+engine_validator_delValidatorAdnlAddress::engine_validator_delValidatorAdnlAddress(td::Bits256 const &permanent_key_hash_, td::Bits256 const &key_hash_)
+  : permanent_key_hash_(permanent_key_hash_)
+  , key_hash_(key_hash_)
 {}
 
 const std::int32_t engine_validator_delValidatorAdnlAddress::ID;
@@ -13035,25 +13760,29 @@ object_ptr<engine_validator_delValidatorAdnlAddress> engine_validator_delValidat
 
 engine_validator_delValidatorAdnlAddress::engine_validator_delValidatorAdnlAddress(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : key_hash_(TlFetchInt256::parse(p))
+  : permanent_key_hash_(TlFetchInt256::parse(p))
+  , key_hash_(TlFetchInt256::parse(p))
 #undef FAIL
 {}
 
 void engine_validator_delValidatorAdnlAddress::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(-658732960);
+  s.store_binary(-150453414);
+  TlStoreBinary::store(permanent_key_hash_, s);
   TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delValidatorAdnlAddress::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(-658732960);
+  s.store_binary(-150453414);
+  TlStoreBinary::store(permanent_key_hash_, s);
   TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delValidatorAdnlAddress::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_delValidatorAdnlAddress");
+    s.store_field("permanent_key_hash", permanent_key_hash_);
     s.store_field("key_hash", key_hash_);
     s.store_class_end();
   }
@@ -13112,11 +13841,13 @@ engine_validator_delValidatorPermanentKey::ReturnType engine_validator_delValida
 }
 
 engine_validator_delValidatorTempKey::engine_validator_delValidatorTempKey()
-  : key_hash_()
+  : permanent_key_hash_()
+  , key_hash_()
 {}
 
-engine_validator_delValidatorTempKey::engine_validator_delValidatorTempKey(td::Bits256 const &key_hash_)
-  : key_hash_(key_hash_)
+engine_validator_delValidatorTempKey::engine_validator_delValidatorTempKey(td::Bits256 const &permanent_key_hash_, td::Bits256 const &key_hash_)
+  : permanent_key_hash_(permanent_key_hash_)
+  , key_hash_(key_hash_)
 {}
 
 const std::int32_t engine_validator_delValidatorTempKey::ID;
@@ -13127,25 +13858,29 @@ object_ptr<engine_validator_delValidatorTempKey> engine_validator_delValidatorTe
 
 engine_validator_delValidatorTempKey::engine_validator_delValidatorTempKey(td::TlParser &p)
 #define FAIL(error) p.set_error(error)
-  : key_hash_(TlFetchInt256::parse(p))
+  : permanent_key_hash_(TlFetchInt256::parse(p))
+  , key_hash_(TlFetchInt256::parse(p))
 #undef FAIL
 {}
 
 void engine_validator_delValidatorTempKey::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(737279708);
+  s.store_binary(-1595481903);
+  TlStoreBinary::store(permanent_key_hash_, s);
   TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delValidatorTempKey::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(737279708);
+  s.store_binary(-1595481903);
+  TlStoreBinary::store(permanent_key_hash_, s);
   TlStoreBinary::store(key_hash_, s);
 }
 
 void engine_validator_delValidatorTempKey::store(td::TlStorerToString &s, const char *field_name) const {
   if (!LOG_IS_STRIPPED(ERROR)) {
     s.store_class_begin(field_name, "engine_validator_delValidatorTempKey");
+    s.store_field("permanent_key_hash", permanent_key_hash_);
     s.store_field("key_hash", key_hash_);
     s.store_class_end();
   }
@@ -13306,12 +14041,12 @@ engine_validator_getConfig::engine_validator_getConfig(td::TlParser &p)
 
 void engine_validator_getConfig::store(td::TlStorerCalcLength &s) const {
   (void)sizeof(s);
-  s.store_binary(-665383871);
+  s.store_binary(1504518693);
 }
 
 void engine_validator_getConfig::store(td::TlStorerUnsafe &s) const {
   (void)sizeof(s);
-  s.store_binary(-665383871);
+  s.store_binary(1504518693);
 }
 
 void engine_validator_getConfig::store(td::TlStorerToString &s, const char *field_name) const {
@@ -13323,7 +14058,7 @@ void engine_validator_getConfig::store(td::TlStorerToString &s, const char *fiel
 
 engine_validator_getConfig::ReturnType engine_validator_getConfig::fetch_result(td::TlParser &p) {
 #define FAIL(error) p.set_error(error); return ReturnType()
-  return TlFetchBoxed<TlFetchObject<engine_validator_config>, 228520974>::parse(p);
+  return TlFetchBoxed<TlFetchObject<engine_validator_jsonConfig>, 321753611>::parse(p);
 #undef FAIL
 }
 
@@ -13405,52 +14140,6 @@ engine_validator_getTime::ReturnType engine_validator_getTime::fetch_result(td::
 #undef FAIL
 }
 
-engine_validator_importLocalKey::engine_validator_importLocalKey()
-  : key_hash_()
-{}
-
-engine_validator_importLocalKey::engine_validator_importLocalKey(td::Bits256 const &key_hash_)
-  : key_hash_(key_hash_)
-{}
-
-const std::int32_t engine_validator_importLocalKey::ID;
-
-object_ptr<engine_validator_importLocalKey> engine_validator_importLocalKey::fetch(td::TlParser &p) {
-  return make_object<engine_validator_importLocalKey>(p);
-}
-
-engine_validator_importLocalKey::engine_validator_importLocalKey(td::TlParser &p)
-#define FAIL(error) p.set_error(error)
-  : key_hash_(TlFetchInt256::parse(p))
-#undef FAIL
-{}
-
-void engine_validator_importLocalKey::store(td::TlStorerCalcLength &s) const {
-  (void)sizeof(s);
-  s.store_binary(202835227);
-  TlStoreBinary::store(key_hash_, s);
-}
-
-void engine_validator_importLocalKey::store(td::TlStorerUnsafe &s) const {
-  (void)sizeof(s);
-  s.store_binary(202835227);
-  TlStoreBinary::store(key_hash_, s);
-}
-
-void engine_validator_importLocalKey::store(td::TlStorerToString &s, const char *field_name) const {
-  if (!LOG_IS_STRIPPED(ERROR)) {
-    s.store_class_begin(field_name, "engine_validator_importLocalKey");
-    s.store_field("key_hash", key_hash_);
-    s.store_class_end();
-  }
-}
-
-engine_validator_importLocalKey::ReturnType engine_validator_importLocalKey::fetch_result(td::TlParser &p) {
-#define FAIL(error) p.set_error(error); return ReturnType()
-  return TlFetchBoxed<TlFetchObject<engine_validator_keyHash>, -1027168946>::parse(p);
-#undef FAIL
-}
-
 engine_validator_importPrivateKey::engine_validator_importPrivateKey()
   : key_()
 {}
@@ -13494,52 +14183,6 @@ void engine_validator_importPrivateKey::store(td::TlStorerToString &s, const cha
 engine_validator_importPrivateKey::ReturnType engine_validator_importPrivateKey::fetch_result(td::TlParser &p) {
 #define FAIL(error) p.set_error(error); return ReturnType()
   return TlFetchBoxed<TlFetchObject<engine_validator_keyHash>, -1027168946>::parse(p);
-#undef FAIL
-}
-
-engine_validator_setPassword::engine_validator_setPassword()
-  : password_()
-{}
-
-engine_validator_setPassword::engine_validator_setPassword(td::BufferSlice &&password_)
-  : password_(std::move(password_))
-{}
-
-const std::int32_t engine_validator_setPassword::ID;
-
-object_ptr<engine_validator_setPassword> engine_validator_setPassword::fetch(td::TlParser &p) {
-  return make_object<engine_validator_setPassword>(p);
-}
-
-engine_validator_setPassword::engine_validator_setPassword(td::TlParser &p)
-#define FAIL(error) p.set_error(error)
-  : password_(TlFetchBytes<td::BufferSlice>::parse(p))
-#undef FAIL
-{}
-
-void engine_validator_setPassword::store(td::TlStorerCalcLength &s) const {
-  (void)sizeof(s);
-  s.store_binary(-989159111);
-  TlStoreString::store(password_, s);
-}
-
-void engine_validator_setPassword::store(td::TlStorerUnsafe &s) const {
-  (void)sizeof(s);
-  s.store_binary(-989159111);
-  TlStoreString::store(password_, s);
-}
-
-void engine_validator_setPassword::store(td::TlStorerToString &s, const char *field_name) const {
-  if (!LOG_IS_STRIPPED(ERROR)) {
-    s.store_class_begin(field_name, "engine_validator_setPassword");
-    s.store_bytes_field("password", password_);
-    s.store_class_end();
-  }
-}
-
-engine_validator_setPassword::ReturnType engine_validator_setPassword::fetch_result(td::TlParser &p) {
-#define FAIL(error) p.set_error(error); return ReturnType()
-  return TlFetchBoxed<TlFetchObject<engine_validator_success>, -1276860789>::parse(p);
 #undef FAIL
 }
 

@@ -78,7 +78,7 @@
   send_raw_message(begin_cell()
    .store_uint(0xc4ff, 17)
    .store_uint(dest_addr, 256)
-   .store_grams(1 << 10)         ;; ~ 1 Gram (will be returned back)
+   .store_grams(1 << 30)         ;; ~ 1 Gram (will be returned back)
    .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
    .store_uint(0x4e436f64, 32)   ;; action
    .store_uint(query_id, 64)

@@ -322,7 +322,7 @@ void VmState::init_cregs(bool same_c3, bool push_0) {
       get_stack().push_smallint(0);
     }
   } else {
-    cr.set_c3(Ref<ExcQuitCont>{true});
+    cr.set_c3(Ref<QuitCont>{true, 11});
   }
   if (cr.d[0].is_null() || cr.d[1].is_null()) {
     auto empty_cell = CellBuilder{}.finalize();

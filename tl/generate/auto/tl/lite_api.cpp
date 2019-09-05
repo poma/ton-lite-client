@@ -46,6 +46,8 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return liteServer_blockState::fetch(p);
     case liteServer_blockTransactions::ID:
       return liteServer_blockTransactions::fetch(p);
+    case liteServer_configInfo::ID:
+      return liteServer_configInfo::fetch(p);
     case liteServer_currentTime::ID:
       return liteServer_currentTime::fetch(p);
     case liteServer_error::ID:
@@ -70,6 +72,8 @@ object_ptr<Object> Object::fetch(td::TlParser &p) {
       return liteServer_transactionInfo::fetch(p);
     case liteServer_transactionList::ID:
       return liteServer_transactionList::fetch(p);
+    case liteServer_version::ID:
+      return liteServer_version::fetch(p);
     case liteServer_debug_verbosity::ID:
       return liteServer_debug_verbosity::fetch(p);
     case tonNode_blockId::ID:
@@ -98,6 +102,10 @@ object_ptr<Function> Function::fetch(td::TlParser &p) {
       return liteServer_getBlockHeader::fetch(p);
     case liteServer_getBlockProof::ID:
       return liteServer_getBlockProof::fetch(p);
+    case liteServer_getConfigAll::ID:
+      return liteServer_getConfigAll::fetch(p);
+    case liteServer_getConfigParams::ID:
+      return liteServer_getConfigParams::fetch(p);
     case liteServer_getMasterchainInfo::ID:
       return liteServer_getMasterchainInfo::fetch(p);
     case liteServer_getOneTransaction::ID:
@@ -110,6 +118,8 @@ object_ptr<Function> Function::fetch(td::TlParser &p) {
       return liteServer_getTime::fetch(p);
     case liteServer_getTransactions::ID:
       return liteServer_getTransactions::fetch(p);
+    case liteServer_getVersion::ID:
+      return liteServer_getVersion::fetch(p);
     case liteServer_listBlockTransactions::ID:
       return liteServer_listBlockTransactions::fetch(p);
     case liteServer_lookupBlock::ID:
@@ -750,6 +760,65 @@ void liteServer_blockTransactions::store(td::TlStorerToString &s, const char *fi
   }
 }
 
+liteServer_configInfo::liteServer_configInfo()
+  : mode_()
+  , id_()
+  , state_proof_()
+  , config_proof_()
+{}
+
+liteServer_configInfo::liteServer_configInfo(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_, td::BufferSlice &&state_proof_, td::BufferSlice &&config_proof_)
+  : mode_(mode_)
+  , id_(std::move(id_))
+  , state_proof_(std::move(state_proof_))
+  , config_proof_(std::move(config_proof_))
+{}
+
+const std::int32_t liteServer_configInfo::ID;
+
+object_ptr<liteServer_configInfo> liteServer_configInfo::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  object_ptr<liteServer_configInfo> res = make_object<liteServer_configInfo>();
+  std::int32_t var0;
+  if ((var0 = res->mode_ = TlFetchInt::parse(p)) < 0) { FAIL("Variable of type # can't be negative"); }
+  res->id_ = TlFetchObject<tonNode_blockIdExt>::parse(p);
+  res->state_proof_ = TlFetchBytes<td::BufferSlice>::parse(p);
+  res->config_proof_ = TlFetchBytes<td::BufferSlice>::parse(p);
+  if (p.get_error()) { FAIL(""); }
+  return res;
+#undef FAIL
+}
+
+void liteServer_configInfo::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  std::int32_t var0;
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+  TlStoreString::store(state_proof_, s);
+  TlStoreString::store(config_proof_, s);
+}
+
+void liteServer_configInfo::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  std::int32_t var0;
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+  TlStoreString::store(state_proof_, s);
+  TlStoreString::store(config_proof_, s);
+}
+
+void liteServer_configInfo::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "liteServer_configInfo");
+  std::int32_t var0;
+    s.store_field("mode", (var0 = mode_));
+    if (id_ == nullptr) { s.store_field("id", "null"); } else { id_->store(s, "id"); }
+    s.store_bytes_field("state_proof", state_proof_);
+    s.store_bytes_field("config_proof", config_proof_);
+    s.store_class_end();
+  }
+}
+
 liteServer_currentTime::liteServer_currentTime()
   : now_()
 {}
@@ -1323,6 +1392,65 @@ void liteServer_transactionList::store(td::TlStorerToString &s, const char *fiel
   }
 }
 
+liteServer_version::liteServer_version()
+  : mode_()
+  , version_()
+  , capabilities_()
+  , now_()
+{}
+
+liteServer_version::liteServer_version(std::int32_t mode_, std::int32_t version_, std::int64_t capabilities_, std::int32_t now_)
+  : mode_(mode_)
+  , version_(version_)
+  , capabilities_(capabilities_)
+  , now_(now_)
+{}
+
+const std::int32_t liteServer_version::ID;
+
+object_ptr<liteServer_version> liteServer_version::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  object_ptr<liteServer_version> res = make_object<liteServer_version>();
+  std::int32_t var0;
+  if ((var0 = res->mode_ = TlFetchInt::parse(p)) < 0) { FAIL("Variable of type # can't be negative"); }
+  res->version_ = TlFetchInt::parse(p);
+  res->capabilities_ = TlFetchLong::parse(p);
+  res->now_ = TlFetchInt::parse(p);
+  if (p.get_error()) { FAIL(""); }
+  return res;
+#undef FAIL
+}
+
+void liteServer_version::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  std::int32_t var0;
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreBinary::store(version_, s);
+  TlStoreBinary::store(capabilities_, s);
+  TlStoreBinary::store(now_, s);
+}
+
+void liteServer_version::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  std::int32_t var0;
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreBinary::store(version_, s);
+  TlStoreBinary::store(capabilities_, s);
+  TlStoreBinary::store(now_, s);
+}
+
+void liteServer_version::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "liteServer_version");
+  std::int32_t var0;
+    s.store_field("mode", (var0 = mode_));
+    s.store_field("version", version_);
+    s.store_field("capabilities", capabilities_);
+    s.store_field("now", now_);
+    s.store_class_end();
+  }
+}
+
 liteServer_debug_verbosity::liteServer_debug_verbosity()
   : value_()
 {}
@@ -1777,6 +1905,116 @@ liteServer_getBlockProof::ReturnType liteServer_getBlockProof::fetch_result(td::
 #undef FAIL
 }
 
+liteServer_getConfigAll::liteServer_getConfigAll()
+  : mode_()
+  , id_()
+{}
+
+liteServer_getConfigAll::liteServer_getConfigAll(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_)
+  : mode_(mode_)
+  , id_(std::move(id_))
+{}
+
+const std::int32_t liteServer_getConfigAll::ID;
+
+object_ptr<liteServer_getConfigAll> liteServer_getConfigAll::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  object_ptr<liteServer_getConfigAll> res = make_object<liteServer_getConfigAll>();
+  std::int32_t var0;
+  if ((var0 = res->mode_ = TlFetchInt::parse(p)) < 0) { FAIL("Variable of type # can't be negative"); }
+  res->id_ = TlFetchObject<tonNode_blockIdExt>::parse(p);
+  if (p.get_error()) { FAIL(""); }
+  return res;
+#undef FAIL
+}
+
+void liteServer_getConfigAll::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  s.store_binary(-1860491593);
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+}
+
+void liteServer_getConfigAll::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  s.store_binary(-1860491593);
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+}
+
+void liteServer_getConfigAll::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "liteServer_getConfigAll");
+    s.store_field("mode", (var0 = mode_));
+    if (id_ == nullptr) { s.store_field("id", "null"); } else { id_->store(s, "id"); }
+    s.store_class_end();
+  }
+}
+
+liteServer_getConfigAll::ReturnType liteServer_getConfigAll::fetch_result(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return ReturnType()
+  return TlFetchBoxed<TlFetchObject<liteServer_configInfo>, -1367660753>::parse(p);
+#undef FAIL
+}
+
+liteServer_getConfigParams::liteServer_getConfigParams()
+  : mode_()
+  , id_()
+  , param_list_()
+{}
+
+liteServer_getConfigParams::liteServer_getConfigParams(std::int32_t mode_, object_ptr<tonNode_blockIdExt> &&id_, std::vector<std::int32_t> &&param_list_)
+  : mode_(mode_)
+  , id_(std::move(id_))
+  , param_list_(std::move(param_list_))
+{}
+
+const std::int32_t liteServer_getConfigParams::ID;
+
+object_ptr<liteServer_getConfigParams> liteServer_getConfigParams::fetch(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return nullptr;
+  object_ptr<liteServer_getConfigParams> res = make_object<liteServer_getConfigParams>();
+  std::int32_t var0;
+  if ((var0 = res->mode_ = TlFetchInt::parse(p)) < 0) { FAIL("Variable of type # can't be negative"); }
+  res->id_ = TlFetchObject<tonNode_blockIdExt>::parse(p);
+  res->param_list_ = TlFetchVector<TlFetchInt>::parse(p);
+  if (p.get_error()) { FAIL(""); }
+  return res;
+#undef FAIL
+}
+
+void liteServer_getConfigParams::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  s.store_binary(705764377);
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+  TlStoreVector<TlStoreBinary>::store(param_list_, s);
+}
+
+void liteServer_getConfigParams::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  s.store_binary(705764377);
+  TlStoreBinary::store((var0 = mode_), s);
+  TlStoreObject::store(id_, s);
+  TlStoreVector<TlStoreBinary>::store(param_list_, s);
+}
+
+void liteServer_getConfigParams::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "liteServer_getConfigParams");
+    s.store_field("mode", (var0 = mode_));
+    if (id_ == nullptr) { s.store_field("id", "null"); } else { id_->store(s, "id"); }
+    { const std::vector<std::int32_t> &v = param_list_; const std::uint32_t multiplicity = static_cast<std::uint32_t>(v.size()); const auto vector_name = "vector[" + td::to_string(multiplicity)+ "]"; s.store_class_begin("param_list", vector_name.c_str()); for (std::uint32_t i = 0; i < multiplicity; i++) { s.store_field("", v[i]); } s.store_class_end(); }
+    s.store_class_end();
+  }
+}
+
+liteServer_getConfigParams::ReturnType liteServer_getConfigParams::fetch_result(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return ReturnType()
+  return TlFetchBoxed<TlFetchObject<liteServer_configInfo>, -1367660753>::parse(p);
+#undef FAIL
+}
+
 liteServer_getMasterchainInfo::liteServer_getMasterchainInfo() {
 }
 
@@ -2084,6 +2322,45 @@ void liteServer_getTransactions::store(td::TlStorerToString &s, const char *fiel
 liteServer_getTransactions::ReturnType liteServer_getTransactions::fetch_result(td::TlParser &p) {
 #define FAIL(error) p.set_error(error); return ReturnType()
   return TlFetchBoxed<TlFetchObject<liteServer_transactionList>, 1864812043>::parse(p);
+#undef FAIL
+}
+
+liteServer_getVersion::liteServer_getVersion() {
+}
+
+const std::int32_t liteServer_getVersion::ID;
+
+object_ptr<liteServer_getVersion> liteServer_getVersion::fetch(td::TlParser &p) {
+  return make_object<liteServer_getVersion>(p);
+}
+
+liteServer_getVersion::liteServer_getVersion(td::TlParser &p)
+#define FAIL(error) p.set_error(error)
+#undef FAIL
+{
+  (void)p;
+}
+
+void liteServer_getVersion::store(td::TlStorerCalcLength &s) const {
+  (void)sizeof(s);
+  s.store_binary(590058507);
+}
+
+void liteServer_getVersion::store(td::TlStorerUnsafe &s) const {
+  (void)sizeof(s);
+  s.store_binary(590058507);
+}
+
+void liteServer_getVersion::store(td::TlStorerToString &s, const char *field_name) const {
+  if (!LOG_IS_STRIPPED(ERROR)) {
+    s.store_class_begin(field_name, "liteServer_getVersion");
+    s.store_class_end();
+  }
+}
+
+liteServer_getVersion::ReturnType liteServer_getVersion::fetch_result(td::TlParser &p) {
+#define FAIL(error) p.set_error(error); return ReturnType()
+  return TlFetchBoxed<TlFetchObject<liteServer_version>, 1510248933>::parse(p);
 #undef FAIL
 }
 

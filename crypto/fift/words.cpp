@@ -1750,7 +1750,7 @@ int parse_number(std::string s, td::RefInt256& num, td::RefInt256& denom, bool a
         return 0;
       }
     }
-    x.negate();
+    x.negate().normalize();
   } else if (len >= 3 && str[0] == '0' && (str[1] == 'x' || str[1] == 'b')) {
     if (str[1] == 'x') {
       base = 16;

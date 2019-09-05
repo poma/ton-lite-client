@@ -22,6 +22,7 @@
 #include "ton/ton-types.h"
 #include "terminal/terminal.h"
 #include "vm/cells.h"
+#include "vm/stack.hpp"
 #include "td/utils/filesystem.h"
 
 using td::Ref;
@@ -42,6 +43,8 @@ class TestNode : public td::actor::Actor {
 
   int server_time_ = 0;
   int server_time_got_at_ = 0;
+  int server_version_ = 0;
+  long long server_capabilities_ = 0;
 
   ton::ZeroStateIdExt zstate_id_;
   ton::BlockIdExt mc_last_id_;
@@ -77,6 +80,7 @@ class TestNode : public td::actor::Actor {
 
   void run_init_queries();
   bool get_server_time();
+  bool get_server_version();
   bool get_server_mc_block_id();
   void got_server_mc_block_id(ton::BlockIdExt blkid, ton::ZeroStateIdExt zstateid);
   bool request_block(ton::BlockIdExt blkid);
@@ -90,6 +94,12 @@ class TestNode : public td::actor::Actor {
   void got_account_state(ton::BlockIdExt ref_blk, ton::BlockIdExt blk, ton::BlockIdExt shard_blk,
                          td::BufferSlice shard_proof, td::BufferSlice proof, td::BufferSlice state,
                          ton::WorkchainId workchain, ton::StdSmcAddress addr, std::string filename, int mode);
+  bool parse_run_method(ton::WorkchainId workchain, ton::StdSmcAddress addr, ton::BlockIdExt ref_blkid,
+                        std::string method_name);
+  void run_smc_method(ton::BlockIdExt ref_blk, ton::BlockIdExt blk, ton::BlockIdExt shard_blk,
+                      td::BufferSlice shard_proof, td::BufferSlice proof, td::BufferSlice state,
+                      ton::WorkchainId workchain, ton::StdSmcAddress addr, std::string method,
+                      std::vector<vm::StackEntry> params);
   bool get_all_shards(bool use_last = true, ton::BlockIdExt blkid = {});
   void got_all_shards(ton::BlockIdExt blk, td::BufferSlice proof, td::BufferSlice data);
   bool get_config_params(ton::BlockIdExt blkid, int mode = 0, std::string filename = "");
@@ -144,6 +154,8 @@ class TestNode : public td::actor::Actor {
   bool parse_shard_id(ton::ShardIdFull& shard);
   bool parse_block_id_ext(ton::BlockIdExt& blkid, bool allow_incomplete = false);
   bool parse_block_id_ext(std::string blk_id_string, ton::BlockIdExt& blkid, bool allow_incomplete = false) const;
+  bool parse_stack_value(td::Slice str, vm::StackEntry& value);
+  bool parse_stack_value(vm::StackEntry& value);
   bool register_blkid(const ton::BlockIdExt& blkid);
   bool show_new_blkids(bool all = false);
   bool complete_blkid(ton::BlockId partial_blkid, ton::BlockIdExt& complete_blkid) const;
@@ -192,6 +204,7 @@ class TestNode : public td::actor::Actor {
   void add_cmd(td::BufferSlice data) {
     ex_mode_ = true;
     ex_queries_.push_back(std::move(data));
+    readline_enabled_ = false;
   }
   void alarm() override {
     if (fail_timeout_.is_in_past()) {

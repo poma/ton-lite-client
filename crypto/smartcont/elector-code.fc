@@ -1,6 +1,6 @@
 ;; Elector smartcontract
 
-;; cur_elect credits past_elect_dict grams active_id active_hash
+;; cur_elect credits past_elect grams active_id active_hash
 (cell, cell, cell, int, int, int) load_data() {
   var cs = get_data().begin_parse();
   var res = (cs~load_dict(), cs~load_dict(), cs~load_dict(), cs~load_grams(), cs~load_uint(32), cs~load_uint(256));
@@ -8,12 +8,12 @@
   return res;
 }
 
-;; cur_elect credits past_elect_dict grams active_id active_hash
-() store_data(elect, credits, dict, grams, active_id, active_hash) impure {
+;; cur_elect credits past_elect grams active_id active_hash
+() store_data(elect, credits, past_elect, grams, active_id, active_hash) impure {
   set_data(begin_cell()
     .store_dict(elect)
     .store_dict(credits)
-    .store_dict(dict)
+    .store_dict(past_elect)
     .store_grams(grams)
     .store_uint(active_id, 32)
     .store_uint(active_hash, 256)
@@ -220,7 +220,7 @@ _ unfreeze_all(credits, past_elections, elect_id) {
     ;; no elections with this id
     return (credits, past_elections, 0);
   }
-  var (data1, vset_hash, fdict, tot_stakes, bonuses) = (fs~load_uint(64), fs~load_uint(256), fs~load_dict(), fs~load_grams(), fs~load_grams());
+  var (data1, vset_hash, fdict, tot_stakes, bonuses, complaints) = (fs~load_uint(64), fs~load_uint(256), fs~load_dict(), fs~load_grams(), fs~load_grams(), fs~load_dict());
   fs.end_parse();
   var unused_prizes = (bonuses > 0) ?
     credits~unfreeze_with_bonuses(fdict, tot_stakes, bonuses) :
@@ -260,32 +260,32 @@ _ unfreeze_all(credits, past_elections, elect_id) {
 }
 
 () process_simple_transfer(s_addr, msg_value) impure {
-  var (elect, credits, prev_elect, grams, active_id, active_hash) = load_data();
+  var (elect, credits, past_elect, grams, active_id, active_hash) = load_data();
   (int src_wc, int src_addr) = parse_std_addr(s_addr);
   if (src_addr | (src_wc + 1) | (active_id == 0)) {
     ;; simple transfer to us (credit "nobody's" account)
     ;; (or no known active validator set)
     grams += msg_value;
-    return store_data(elect, credits, prev_elect, grams, active_id, active_hash);
+    return store_data(elect, credits, past_elect, grams, active_id, active_hash);
   }
   ;; zero source address -1:00..00 (collecting validator fees)
-  var (fs, f) = prev_elect.udict_get?(32, active_id);
+  var (fs, f) = past_elect.udict_get?(32, active_id);
   ifnot (f) {
     ;; active validator set not found (?)
     grams += msg_value;
   } else {
     ;; credit active validator set bonuses
     var (data, hash, dict, total_stake, bonuses) = (fs~load_uint(64), fs~load_uint(256), fs~load_dict(), fs~load_grams(), fs~load_grams());
-    fs.end_parse();
     bonuses += msg_value;
-    prev_elect~udict_set_builder(32, active_id, begin_cell()
+    past_elect~udict_set_builder(32, active_id, begin_cell()
       .store_uint(data, 64)
       .store_uint(hash, 256)
       .store_dict(dict)
       .store_grams(total_stake)
-      .store_grams(bonuses));
+      .store_grams(bonuses)
+      .store_slice(fs));
   }
-  store_data(elect, credits, prev_elect, grams, active_id, active_hash);
+  store_data(elect, credits, past_elect, grams, active_id, active_hash);
   return ();
 }
 
@@ -578,7 +578,8 @@ int conduct_elections(ds, elect, credits) impure {
     .store_uint(cell_hash(vset), 256)
     .store_dict(frozen)
     .store_grams(total_stakes)
-    .store_grams(0));
+    .store_grams(0)
+    .store_int(false, 1));
   ;; store credits and frozen until end
   set_data(begin_cell()
     .store_dict(elect)
@@ -590,7 +591,7 @@ int conduct_elections(ds, elect, credits) impure {
 }
 
 int update_active_vset_id() impure {
-  var (elect, credits, prev_elect, grams, active_id, active_hash) = load_data();
+  var (elect, credits, past_elect, grams, active_id, active_hash) = load_data();
   var cur_hash = config_param(34).cell_hash();
   if (cur_hash == active_hash) {
     ;; validator set unchanged
@@ -598,7 +599,7 @@ int update_active_vset_id() impure {
   }
   if (active_id) {
     ;; active_id becomes inactive
-    var (fs, f) = prev_elect.udict_get?(32, active_id);
+    var (fs, f) = past_elect.udict_get?(32, active_id);
     if (f) {
       ;; adjust unfreeze time of this validator set
       var unfreeze_time = fs~load_uint(32);
@@ -606,7 +607,7 @@ int update_active_vset_id() impure {
       var (stake_held, hash) = (fs~load_uint(32), fs~load_uint(256));
       throw_unless(57, hash == active_hash);
       unfreeze_time = now() + stake_held;
-      prev_elect~udict_set_builder(32, active_id, begin_cell()
+      past_elect~udict_set_builder(32, active_id, begin_cell()
         .store_uint(unfreeze_time, 32)
         .store_slice(fs0));
     }
@@ -614,24 +615,24 @@ int update_active_vset_id() impure {
   ;; look up new active_id by hash
   var id = -1;
   do {
-    (id, var fs, var f) = prev_elect.udict_get_next?(32, id);
+    (id, var fs, var f) = past_elect.udict_get_next?(32, id);
     if (f) {
       var (tm, hash) = (fs~load_uint(64), fs~load_uint(256));
       if (hash == cur_hash) {
-        ;; parse the rest of this record
+        ;; parse more of this record
         var (dict, total_stake, bonuses) = (fs~load_dict(), fs~load_grams(), fs~load_grams());
-        fs.end_parse();
         ;; transfer 1/8 of accumulated everybody's grams to this validator set as bonuses
         var amount = (grams >> 3);
         grams -= amount;
         bonuses += amount;
         ;; serialize back
-        prev_elect~udict_set_builder(32, id, begin_cell()
+        past_elect~udict_set_builder(32, id, begin_cell()
           .store_uint(tm, 64)
           .store_uint(hash, 256)
           .store_dict(dict)
           .store_grams(total_stake)
-          .store_grams(bonuses));
+          .store_grams(bonuses)
+          .store_slice(fs));
         ;; found
         f = false;
       }
@@ -639,7 +640,7 @@ int update_active_vset_id() impure {
   } until (~ f);
   active_id = (id.null?() ? 0 : id);
   active_hash = cur_hash;
-  store_data(elect, credits, prev_elect, grams, active_id, active_hash);
+  store_data(elect, credits, past_elect, grams, active_id, active_hash);
   return true;
 }
 
@@ -676,18 +677,18 @@ int validator_set_installed(ds, elect, credits) impure {
 }
 
 int check_unfreeze() impure {
-  var (elect, credits, prev_elect, grams, active_id, active_hash) = load_data();
+  var (elect, credits, past_elect, grams, active_id, active_hash) = load_data();
   int id = -1;
   do {
-    (id, var fs, var f) = prev_elect.udict_get_next?(32, id);
+    (id, var fs, var f) = past_elect.udict_get_next?(32, id);
     if (f) {
       var unfreeze_at = fs~load_uint(32);
       if ((unfreeze_at <= now()) & (id != active_id)) {
         ;; unfreeze!
-        (credits, prev_elect, var unused_prizes) = unfreeze_all(credits, prev_elect, id);
+        (credits, past_elect, var unused_prizes) = unfreeze_all(credits, past_elect, id);
         grams += unused_prizes;
         ;; unfreeze only one at time, exit loop
-        store_data(elect, credits, prev_elect, grams, active_id, active_hash);
+        store_data(elect, credits, past_elect, grams, active_id, active_hash);
         ;; exit loop
         f = false;
       }
@@ -749,4 +750,49 @@ int announce_new_elections(ds, elect, credits) {
   }
   throw_if(0, update_active_vset_id());  ;; active validator set id updated, exit
   check_unfreeze();
+}
+
+;; Get methods
+
+;; returns active election id or 0
+int active_election_id() method_id {
+  var elect = get_data().begin_parse().preload_dict();
+  return elect.null?() ? 0 : elect.begin_parse().preload_uint(32);
+}
+
+;; checks whether a public key participates in current elections
+int participates_in(int validator_pubkey) method_id {
+  var elect = get_data().begin_parse().preload_dict();
+  if (elect.null?()) {
+    return 0;
+  }
+  var (elect_at, elect_close, min_stake, total_stake, members, failed, finished) = elect.unpack_elect();
+  var (mem, found) = members.udict_get?(256, validator_pubkey);
+  return found ? mem~load_grams() : 0;
+}
+
+;; returns the list of all participants of current elections with their stakes
+_ participant_list() method_id {
+  var elect = get_data().begin_parse().preload_dict();
+  if (elect.null?()) {
+    return nil;
+  }
+  var (elect_at, elect_close, min_stake, total_stake, members, failed, finished) = elect.unpack_elect();
+  var l = nil;
+  var id = (1 << 255) + ((1 << 255) - 1);
+  do {
+    (id, var fs, var f) = members.udict_get_prev?(256, id);
+    if (f) {
+      l = cons(pair(id, fs~load_grams()), l);
+    }
+  } until (~ f);
+  return l;
+}
+
+;; computes the return stake
+int compute_returned_stake(int wallet_addr) method_id {
+  var cs = get_data().begin_parse();
+  (_, var credits) = (cs~load_dict(), cs~load_dict());
+  var (val, f) = credits.udict_get?(256, wallet_addr);
+  return f ? val~load_grams() : 0;
 }

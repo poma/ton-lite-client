@@ -17,6 +17,7 @@
     Copyright 2017-2019 Telegram Systems LLP
 */
 #include "func.h"
+#include "td/utils/crypto.h"
 #include <fstream>
 
 namespace sym {
@@ -974,18 +975,31 @@ void parse_func_def(Lexer& lex) {
     lex.next();
   }
   td::RefInt256 method_id;
+  std::string method_name;
   if (lex.tp() == _MethodId) {
     lex.next();
-    lex.expect('(');
-    if (lex.tp() != Lexem::Number) {
-      throw src::ParseError{lex.cur().loc, "integer method identifier expected"};
+    if (lex.tp() == '(') {
+      lex.expect('(');
+      if (lex.tp() == Lexem::String) {
+        method_name = lex.cur().str;
+      } else if (lex.tp() == Lexem::Number) {
+        method_name = lex.cur().str;
+        method_id = td::string_to_int256(method_name);
+        if (method_id.is_null()) {
+          lex.cur().error_at("invalid integer constant `", "`");
+        }
+      } else {
+        throw src::ParseError{lex.cur().loc, "integer or string method identifier expected"};
+      }
+      lex.next();
+      lex.expect(')');
+    } else {
+      method_name = func_name.str;
     }
-    method_id = td::string_to_int256(lex.cur().str);
     if (method_id.is_null()) {
-      lex.cur().error_at("invalid integer constant `", "`");
+      unsigned crc = td::crc16(method_name);
+      method_id = td::make_refint((crc & 0xffff) | 0x10000);
     }
-    lex.next();
-    lex.expect(')');
   }
   if (lex.tp() != ';' && lex.tp() != '{' && lex.tp() != _Asm) {
     lex.expect('{', "function body block expected");

@@ -1023,7 +1023,7 @@ struct BlkPrevInfo final : TLB_Complex {
 extern const BlkPrevInfo t_BlkPrevInfo_0;
 
 struct McStateExtra final : TLB_Complex {
-  enum { masterchain_state_extra = 0xcc25 };
+  enum { masterchain_state_extra = 0xcc26 };
   bool skip(vm::CellSlice& cs) const override;
   bool validate_skip(vm::CellSlice& cs, bool weak = false) const override;
 };

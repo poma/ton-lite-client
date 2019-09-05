@@ -420,10 +420,11 @@ bool store_custom(vm::CellBuilder& cb) {
   }
   vm::CellBuilder cb2, cb3;
   bool ok = true;
-  PDO(cb2.store_long_bool(0xcc25, 16)        // masterchain_state_extra#cc25
+  PDO(cb2.store_long_bool(0xcc26, 16)        // masterchain_state_extra#cc26
       && cb2.store_long_bool(0, 1)           // shard_hashes:ShardHashes = (HashmapE 32 ^(BinTree ShardDescr))
       && store_config_params(cb2)            // config:ConfigParams
-      && store_validator_list_hash(cb3)      // ^[ validator_list_hash_short:uint32
+      && cb3.store_long_bool(0, 16)          // ^[ flags:(## 16) { flags = 0 }
+      && store_validator_list_hash(cb3)      //   validator_list_hash_short:uint32
       && cb3.store_long_bool(0, 32)          //   catchain_seqno:uint32
       && cb3.store_bool_bool(true)           //   nx_cc_updated:Bool
       && cb3.store_zeroes_bool(1 + 65)       //   prev_blocks:OldMcBlocksInfo

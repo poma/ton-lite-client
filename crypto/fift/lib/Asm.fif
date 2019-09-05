@@ -736,13 +736,25 @@ x{EDF9} @Defop BOOLEVAL
 // x{EE} is BLESSARGS
 //
 // dictionary subroutine call/jump primitives
-{ dup 8 ufits
-  { <b x{F0} s, swap 8 u, }
-  { <b x{F12_} s, swap 14 u,
+{ c3 PUSH EXECUTE } : CALLVAR
+{ c3 PUSH JMPX } : JMPVAR
+{ c3 PUSH } : PREPAREVAR
+{ dup 14 ufits {
+    dup 8 ufits {
+      <b x{F0} s, swap 8 u, } {
+      <b x{F12_} s, swap 14 u,
+    } cond @addopb } {
+    PUSHINT CALLVAR
   } cond
-@addopb } dup : CALL : CALLDICT
-{ <b x{F16_} s, swap 14 u, @addopb } dup : JMP : JMPDICT
-{ <b x{F1A_} s, swap 14 u, @addopb } dup : PREPARE : PREPAREDICT
+} dup : CALL : CALLDICT
+{ dup 14 ufits
+  { <b x{F16_} s, swap 14 u, @addopb }
+  { PUSHINT JMPVAR } cond
+} dup : JMP : JMPDICT
+{ dup 14 ufits
+  { <b x{F1A_} s, swap 14 u, @addopb }
+  { PUSHINT c3 PREPAREVAR } cond
+} dup : PREPARE : PREPAREDICT
 //
 // throwing and handling exceptions
 { dup 6 ufits
@@ -1071,7 +1083,7 @@ variable @proclist
   drop @proclist null! @proccnt 0!
 } : }END
 forget @proclist  forget @proccnt
-{ }END <{ SETCP0 swap @procdictkeylen DICTPUSHCONST DICTIGETJMP 11 THROW }> } : }END>
+{ }END <{ SETCP0 swap @procdictkeylen DICTPUSHCONST DICTIGETJMP 11 THROWARG }> } : }END>
 { }END> b> } : }END>c
 { }END>c <s } : }END>s
 
