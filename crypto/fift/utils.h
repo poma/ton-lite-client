@@ -26,6 +26,10 @@ struct FiftOutput {
   SourceLookup source_lookup;
   std::string output;
 };
+td::Result<fift::SourceLookup> create_mem_source_lookup(std::string main, std::string fift_dir = "",
+                                                        bool need_preamble = true, bool need_asm = true,
+                                                        bool need_ton_util = true);
 td::Result<FiftOutput> mem_run_fift(std::string source, std::vector<std::string> args = {}, std::string fift_dir = "");
-td::Result<td::Ref<vm::Cell>> compile_asm(td::Slice asm_code);
+td::Result<FiftOutput> mem_run_fift(SourceLookup source_lookup, std::vector<std::string> args);
+td::Result<td::Ref<vm::Cell>> compile_asm(td::Slice asm_code, std::string fift_dir = "");
 }  // namespace fift

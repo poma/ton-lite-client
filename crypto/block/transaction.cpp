@@ -1350,8 +1350,8 @@ int Transaction::try_action_send_msg(vm::CellSlice& cs, ActionPhase& ap, const A
       req = ap.remaining_balance;
       act_rec.mode &= ~1;  // pay fees from attached value
     } else if (act_rec.mode & 0x40) {
-      // attach all remaining balance of the inbound message
-      req = msg_balance_remaining;
+      // attach all remaining balance of the inbound message (in addition to the original value)
+      req += msg_balance_remaining;
       if (!(act_rec.mode & 1) && compute_phase) {
         req -= compute_phase->gas_fees;
         if (!req.is_valid()) {
@@ -1412,6 +1412,11 @@ int Transaction::try_action_send_msg(vm::CellSlice& cs, ActionPhase& ap, const A
 
     new_msg_bits = cb.size();
     new_msg = cb.finalize();
+
+    // clear msg_balance_remaining if it has been used
+    if (act_rec.mode & 0xc0) {
+      msg_balance_remaining.set_zero();
+    }
 
     // update balance
     ap.remaining_balance -= req_grams_brutto;

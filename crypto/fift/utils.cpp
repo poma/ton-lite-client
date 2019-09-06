@@ -28,19 +28,19 @@ namespace {
 std::string fift_dir(std::string dir) {
   return dir.size() > 0 ? dir : td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir().str() + "lib/";
 }
-std::string load_source(std::string name, std::string dir = "") {
-  return td::read_file_str(fift_dir(dir) + name).move_as_ok();
+td::Result<std::string> load_source(std::string name, std::string dir = "") {
+  return td::read_file_str(fift_dir(dir) + name);
 }
-std::string load_Fift_fif(std::string dir = "") {
+td::Result<std::string> load_Fift_fif(std::string dir = "") {
   return load_source("Fift.fif", dir);
 }
-std::string load_Asm_fif(std::string dir = "") {
+td::Result<std::string> load_Asm_fif(std::string dir = "") {
   return load_source("Asm.fif", dir);
 }
-std::string load_TonUtil_fif(std::string dir = "") {
+td::Result<std::string> load_TonUtil_fif(std::string dir = "") {
   return load_source("TonUtil.fif", dir);
 }
-std::string load_Lists_fif(std::string dir = "") {
+td::Result<std::string> load_Lists_fif(std::string dir = "") {
   return load_source("Lists.fif", dir);
 }
 
@@ -89,23 +89,32 @@ class MemoryFileLoader : public fift::FileLoader {
  private:
   std::map<std::string, std::string, std::less<>> files_;
 };
-fift::SourceLookup create_source_lookup(std::string main, bool need_preamble = true, bool need_asm = true,
-                                        bool need_ton_util = true, std::string dir = "") {
+
+td::Result<fift::SourceLookup> create_source_lookup(std::string main, bool need_preamble = true, bool need_asm = true,
+                                                    bool need_ton_util = true, std::string dir = "") {
   auto loader = std::make_unique<MemoryFileLoader>();
   loader->add_file("/main.fif", std::move(main));
   if (need_preamble) {
-    loader->add_file("/Fift.fif", load_Fift_fif(dir));
+    TRY_RESULT(f, load_Fift_fif(dir));
+    loader->add_file("/Fift.fif", std::move(f));
   }
   if (need_asm) {
-    loader->add_file("/Asm.fif", load_Asm_fif(dir));
+    TRY_RESULT(f, load_Asm_fif(dir));
+    loader->add_file("/Asm.fif", std::move(f));
   }
   if (need_ton_util) {
-    loader->add_file("/Lists.fif", load_Lists_fif(dir));
-    loader->add_file("/TonUtil.fif", load_TonUtil_fif(dir));
+    {
+      TRY_RESULT(f, load_Lists_fif(dir));
+      loader->add_file("/Lists.fif", std::move(f));
+    }
+    {
+      TRY_RESULT(f, load_TonUtil_fif(dir));
+      loader->add_file("/TonUtil.fif", std::move(f));
+    }
   }
   auto res = fift::SourceLookup(std::move(loader));
   res.add_include_path("/");
-  return res;
+  return std::move(res);
 }
 
 td::Result<fift::SourceLookup> run_fift(fift::SourceLookup source_lookup, std::ostream *stream,
@@ -134,21 +143,32 @@ td::Result<fift::SourceLookup> run_fift(fift::SourceLookup source_lookup, std::o
 }  // namespace
 td::Result<FiftOutput> mem_run_fift(std::string source, std::vector<std::string> args, std::string fift_dir) {
   std::stringstream ss;
-  auto r_source_lookup = run_fift(create_source_lookup(source, true, true, true, fift_dir), &ss, true, std::move(args));
-  if (r_source_lookup.is_error()) {
-    LOG(ERROR) << ss.str();
-  }
-  TRY_RESULT(source_lookup, std::move(r_source_lookup));
+  TRY_RESULT(source_lookup, create_source_lookup(source, true, true, true, fift_dir));
+  TRY_RESULT_ASSIGN(source_lookup, run_fift(std::move(source_lookup), &ss, true, std::move(args)));
   FiftOutput res;
   res.source_lookup = std::move(source_lookup);
   res.output = ss.str();
   return std::move(res);
 }
-td::Result<td::Ref<vm::Cell>> compile_asm(td::Slice asm_code) {
+td::Result<FiftOutput> mem_run_fift(SourceLookup source_lookup, std::vector<std::string> args) {
   std::stringstream ss;
-  TRY_RESULT(res, run_fift(create_source_lookup(PSTRING() << "\"Asm.fif\" include\n<{ " << asm_code
-                                                          << "\n}>c boc>B \"res\" B>file"),
-                           &ss));
+  TRY_RESULT_ASSIGN(source_lookup, run_fift(std::move(source_lookup), &ss, true, std::move(args)));
+  FiftOutput res;
+  res.source_lookup = std::move(source_lookup);
+  res.output = ss.str();
+  return std::move(res);
+}
+td::Result<fift::SourceLookup> create_mem_source_lookup(std::string main, std::string fift_dir, bool need_preamble,
+                                                        bool need_asm, bool need_ton_util) {
+  return create_source_lookup(main, need_preamble, need_asm, need_ton_util, fift_dir);
+}
+
+td::Result<td::Ref<vm::Cell>> compile_asm(td::Slice asm_code, std::string fift_dir) {
+  std::stringstream ss;
+  TRY_RESULT(source_lookup,
+             create_source_lookup(PSTRING() << "\"Asm.fif\" include\n<{ " << asm_code << "\n}>c boc>B \"res\" B>file",
+                                  true, true, true, fift_dir));
+  TRY_RESULT(res, run_fift(std::move(source_lookup), &ss));
   TRY_RESULT(boc, res.read_file("res"));
   return vm::std_boc_deserialize(std::move(boc.data));
 }

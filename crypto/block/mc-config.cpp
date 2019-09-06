@@ -14,6 +14,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with TON Blockchain Library.  If not, see <http://www.gnu.org/licenses/>.
 
+    In addition, as a special exception, the copyright holders give permission 
+    to link the code of portions of this program with the OpenSSL library. 
+    You must obey the GNU General Public License in all respects for all 
+    of the code used other than OpenSSL. If you modify file(s) with this 
+    exception, you may extend this exception to your version of the file(s), 
+    but you are not obligated to do so. If you do not wish to do so, delete this 
+    exception statement from your version. If you delete this exception statement 
+    from all source files in the program, then also delete it here.
+
     Copyright 2017-2019 Telegram Systems LLP
 */
 #include "mc-config.h"
@@ -994,47 +1003,47 @@ std::vector<ton::BlockId> ShardConfig::get_shard_hash_ids(
   std::vector<ton::BlockId> res;
   bool mcout = mc_shard_hash_.is_null() || !mc_shard_hash_->seqno();  // include masterchain as a shard if seqno > 0
   bool ok = shard_hashes_dict_->check_for_each(
-      [&res, &mcout, mc_shard_hash_ = mc_shard_hash_, &filter ](Ref<vm::CellSlice> cs_ref, td::ConstBitPtr key, int n)
-          ->bool {
-            int workchain = (int)key.get_int(n);
-            if (workchain >= 0 && !mcout) {
-              if (filter(ton::ShardIdFull{ton::masterchainId}, true)) {
-                res.emplace_back(mc_shard_hash_->blk_.id);
-              }
-              mcout = true;
-            }
-            if (!cs_ref->have_refs()) {
+      [&res, &mcout, mc_shard_hash_ = mc_shard_hash_, &filter](Ref<vm::CellSlice> cs_ref, td::ConstBitPtr key,
+                                                               int n) -> bool {
+        int workchain = (int)key.get_int(n);
+        if (workchain >= 0 && !mcout) {
+          if (filter(ton::ShardIdFull{ton::masterchainId}, true)) {
+            res.emplace_back(mc_shard_hash_->blk_.id);
+          }
+          mcout = true;
+        }
+        if (!cs_ref->have_refs()) {
+          return false;
+        }
+        std::stack<std::pair<Ref<vm::Cell>, unsigned long long>> stack;
+        stack.emplace(cs_ref->prefetch_ref(), ton::shardIdAll);
+        while (!stack.empty()) {
+          vm::CellSlice cs{vm::NoVm{}, std::move(stack.top().first)};
+          unsigned long long shard = stack.top().second;
+          stack.pop();
+          int t = (int)cs.fetch_ulong(1);
+          if (t < 0) {
+            return false;
+          }
+          if (!filter(ton::ShardIdFull{workchain, shard}, !t)) {
+            continue;
+          }
+          if (!t) {
+            if (!(cs.advance(4) && cs.have(32))) {
               return false;
             }
-            std::stack<std::pair<Ref<vm::Cell>, unsigned long long>> stack;
-            stack.emplace(cs_ref->prefetch_ref(), ton::shardIdAll);
-            while (!stack.empty()) {
-              vm::CellSlice cs{vm::NoVm{}, std::move(stack.top().first)};
-              unsigned long long shard = stack.top().second;
-              stack.pop();
-              int t = (int)cs.fetch_ulong(1);
-              if (t < 0) {
-                return false;
-              }
-              if (!filter(ton::ShardIdFull{workchain, shard}, !t)) {
-                continue;
-              }
-              if (!t) {
-                if (!(cs.advance(4) && cs.have(32))) {
-                  return false;
-                }
-                res.emplace_back(workchain, shard, (int)cs.prefetch_ulong(32));
-                continue;
-              }
-              unsigned long long delta = (td::lower_bit64(shard) >> 1);
-              if (!delta || cs.size_ext() != 0x20000) {
-                return false;
-              }
-              stack.emplace(cs.prefetch_ref(1), shard + delta);
-              stack.emplace(cs.prefetch_ref(0), shard - delta);
-            }
-            return true;
-          },
+            res.emplace_back(workchain, shard, (int)cs.prefetch_ulong(32));
+            continue;
+          }
+          unsigned long long delta = (td::lower_bit64(shard) >> 1);
+          if (!delta || cs.size_ext() != 0x20000) {
+            return false;
+          }
+          stack.emplace(cs.prefetch_ref(1), shard + delta);
+          stack.emplace(cs.prefetch_ref(0), shard - delta);
+        }
+        return true;
+      },
       true);
   if (!ok) {
     return {};
@@ -1390,8 +1399,8 @@ td::Result<std::vector<ton::StdSmcAddress>> Config::get_special_smartcontracts(b
     return td::Status::Error(-666, "configuration loaded without fundamental smart contract list");
   }
   std::vector<ton::StdSmcAddress> res;
-  if (!special_smc_dict->check_for_each([&res, &without_config, conf_addr = config_addr.bits() ](
-          Ref<vm::CellSlice> cs_ref, td::ConstBitPtr key, int n) {
+  if (!special_smc_dict->check_for_each([&res, &without_config, conf_addr = config_addr.bits()](
+                                            Ref<vm::CellSlice> cs_ref, td::ConstBitPtr key, int n) {
         if (cs_ref->size_ext() || n != 256) {
           return false;
         }
