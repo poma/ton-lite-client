@@ -551,7 +551,8 @@ td::Status BlockDbImpl::update_block_info(Ref<FileInfo> blk_info) {
       return td::Status::OK();
     }
   } else {
-    auto res = block_info.emplace(blk_info->blk.id, std::move(blk_info));
+    auto id = blk_info->blk.id;
+    auto res = block_info.emplace(std::move(id), std::move(blk_info));
     if (res.second) {
       return td::Status::OK();
     } else {
@@ -571,7 +572,8 @@ td::Status BlockDbImpl::update_state_info(Ref<FileInfo> state) {
       return td::Status::OK();
     }
   } else {
-    auto res = state_info.emplace(state->blk.id, std::move(state));
+    auto id = state->blk.id;
+    auto res = state_info.emplace(std::move(id), std::move(state));
     if (res.second) {
       return td::Status::OK();
     } else {
