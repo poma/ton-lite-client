@@ -24,6 +24,9 @@ namespace ton {
 namespace adnl {
 
 void AdnlExtClientImpl::alarm() {
+  if (is_closing_) {
+    return;
+  }
   if (conn_.empty() || !conn_.is_alive()) {
     next_create_at_ = td::Timestamp::in(10.0);
     alarm_timestamp() = next_create_at_;
@@ -52,6 +55,19 @@ void AdnlExtClientImpl::alarm() {
     conn_ = td::actor::create_actor<AdnlOutboundConnection>(td::actor::ActorOptions().with_name("outconn").with_poll(),
                                                             fd.move_as_ok(), std::make_unique<Cb>(actor_id(this)), dst_,
                                                             local_id_, actor_id(this));
+  }
+}
+
+void AdnlExtClientImpl::hangup() {
+  conn_ = {};
+  is_closing_ = true;
+  ref_cnt_--;
+  try_stop();
+}
+
+void AdnlExtClientImpl::try_stop() {
+  if (is_closing_ && ref_cnt_ == 0 && out_queries_.empty()) {
+    stop();
   }
 }
 

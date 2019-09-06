@@ -1754,7 +1754,7 @@ void TestNode::got_block(ton::BlockIdExt blkid, td::BufferSlice data, bool dump)
     }
   }
   if (dump) {
-    auto res = vm::std_boc_deserialize(data.clone());
+    auto res = vm::std_boc_deserialize(std::move(data));
     if (res.is_error()) {
       LOG(ERROR) << "cannot deserialize block data : " << res.move_as_error().to_string();
       return;
@@ -1774,7 +1774,7 @@ void TestNode::got_block(ton::BlockIdExt blkid, td::BufferSlice data, bool dump)
     out << outp.str();
     show_block_header(blkid, std::move(root), 0xffff);
   } else {
-    auto res = lazy_boc_deserialize(data.clone());
+    auto res = lazy_boc_deserialize(std::move(data));
     if (res.is_error()) {
       LOG(ERROR) << "cannot lazily deserialize block data : " << res.move_as_error().to_string();
       return;
@@ -1804,13 +1804,13 @@ void TestNode::got_state(ton::BlockIdExt blkid, ton::RootHash root_hash, ton::Fi
   }
   register_blkid(blkid);
   if (!db_root_.empty()) {
-    auto res = save_db_file(fhash, std::move(data));
+    auto res = save_db_file(fhash, data.clone());
     if (res.is_error()) {
       LOG(ERROR) << "error saving state file: " << res.to_string();
     }
   }
   if (dump) {
-    auto res = vm::std_boc_deserialize(data.clone());
+    auto res = vm::std_boc_deserialize(std::move(data));
     if (res.is_error()) {
       LOG(ERROR) << "cannot deserialize block data : " << res.move_as_error().to_string();
       return;
@@ -1830,7 +1830,7 @@ void TestNode::got_state(ton::BlockIdExt blkid, ton::RootHash root_hash, ton::Fi
     out << outp.str();
     show_state_header(blkid, std::move(root), 0xffff);
   } else {
-    auto res = lazy_boc_deserialize(data.clone());
+    auto res = lazy_boc_deserialize(std::move(data));
     if (res.is_error()) {
       LOG(ERROR) << "cannot lazily deserialize block data : " << res.move_as_error().to_string();
       return;

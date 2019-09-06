@@ -154,7 +154,7 @@ void Dictionary::def_ctx_tail_word(std::string name, CtxTailWordFunc func) {
 }
 
 void Dictionary::def_word(std::string name, WordRef word) {
-  auto res = words_.emplace(std::move(name), std::move(word));
+  auto res = words_.emplace(name, std::move(word));
   LOG_IF(FATAL, !res.second) << "Cannot redefine word: " << name;
 }
 

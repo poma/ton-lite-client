@@ -346,8 +346,9 @@ int BagOfCells::revisit(int cell_idx, int force) {
   }
   if (force > 1) {
     // time to allocate
+    auto i = dci.new_idx = rv_idx++;
     cell_list_tmp.emplace_back(std::move(dci));
-    return dci.new_idx = rv_idx++;
+    return i;
   }
   if (dci.new_idx == -3) {
     // already visited

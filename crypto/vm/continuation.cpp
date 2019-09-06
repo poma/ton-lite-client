@@ -790,7 +790,7 @@ int run_vm_code(Ref<CellSlice> code, Stack& stack, int flags, Ref<Cell>* data_pt
   stk.unique_write().set_contents(std::move(stack));
   stack.clear();
   int res = run_vm_code(code, stk, flags, data_ptr, log, steps, gas_limits, std::move(libraries));
-  assert(stack.is_unique());
+  CHECK(stack.is_unique());
   if (stk.is_null()) {
     stack.clear();
   } else if (&(*stk) != &stack) {

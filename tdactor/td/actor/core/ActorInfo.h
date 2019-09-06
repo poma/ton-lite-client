@@ -37,6 +37,10 @@ class ActorInfo : private HeapNode, private ListNode {
   ActorInfo(std::unique_ptr<Actor> actor, ActorState::Flags state_flags, Slice name)
       : actor_(std::move(actor)), name_(name.begin(), name.size()) {
     state_.set_flags_unsafe(state_flags);
+    VLOG(actor) << "Create actor [" << name_ << "]";
+  }
+  ~ActorInfo() {
+    VLOG(actor) << "Destroy actor [" << name_ << "]";
   }
 
   bool is_alive() const {

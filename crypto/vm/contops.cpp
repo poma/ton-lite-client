@@ -267,7 +267,7 @@ int exec_if_else(VmState* st) {
   auto cont0 = stack.pop_cont();
   auto cont1 = stack.pop_cont();
   if (stack.pop_bool()) {
-    cont0 = std::move(cont1);
+    std::swap(cont0, cont1);
   }
   cont1.clear();
   return st->call(std::move(cont0));
@@ -554,11 +554,11 @@ int exec_return_args_common(VmState* st, int count) {
     cdata->stack = std::move(alt_stk);
   } else {
     cdata->stack.write().move_from_stack(alt_stk.write(), copy);
+    alt_stk.clear();
   }
   if (cdata->nargs >= 0) {
     cdata->nargs -= copy;
   }
-  alt_stk.clear();
   st->set_c0(std::move(cont));
   return 0;
 }
@@ -671,9 +671,9 @@ int exec_popsave_ctr(VmState* st, unsigned args) {
   force_cregs(c0)->define(idx, st->get(idx));
   if (!idx) {
     st->set_c0(std::move(c0));
-  }
-  throw_typechk(st->set(idx, std::move(val)));
-  if (idx) {
+    throw_typechk(st->set(idx, std::move(val)));
+  } else {
+    throw_typechk(st->set(idx, std::move(val)));
     st->set_c0(std::move(c0));
   }
   return 0;

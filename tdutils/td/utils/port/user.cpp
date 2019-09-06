@@ -33,7 +33,7 @@ td::Status change_user(td::Slice user) {
   return td::Status::OK();
 }
 #else
-td::Status change_user(std::string username) {
+td::Status change_user(td::Slice username) {
   return td::Status::Error("not implemented");
 }
 #endif

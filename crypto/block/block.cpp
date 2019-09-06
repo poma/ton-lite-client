@@ -761,7 +761,7 @@ td::Status ShardState::unpack_out_msg_queue_info(Ref<vm::Cell> out_msg_queue_inf
     return td::Status::Error(
         -666, "IhrPendingInfo in the state of "s + id_.to_str() + " is invalid according to automated validity checks");
   }
-  processed_upto_ = block::MsgProcessedUptoCollection::unpack(ton::ShardIdFull(id_), std::move(qinfo).proc_info);
+  processed_upto_ = block::MsgProcessedUptoCollection::unpack(ton::ShardIdFull(id_), std::move(qinfo.proc_info));
   ihr_pending_ = std::make_unique<vm::Dictionary>(std::move(qinfo.ihr_pending), 320);
   auto shard1 = id_.shard_full();
   td::BitArray<64> pfx{(long long)shard1.shard};

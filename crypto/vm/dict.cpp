@@ -2606,17 +2606,20 @@ std::pair<Ref<CellSlice>, Ref<CellSlice>> AugmentedDictionary::dict_traverse_ext
     ++key_buffer;
     --n;
     bool sw = r & 1;
+    if (sw) {
+      std::swap(c1, c2);
+    }
     if (r & 4) {
       // have to visit both children in some order; do a recursive call to visit the first child
       key_buffer[-1] = sw;
-      auto tmp = dict_traverse_extra(sw ? std::move(c2) : std::move(c1), key_buffer, n, traverse_node);
+      auto tmp = dict_traverse_extra(std::move(c1), key_buffer, n, traverse_node);
       if (tmp.first.not_null()) {
         return tmp;
       }
     }
     // visit the remaining child
     key_buffer[-1] = !sw;
-    dict = sw ? std::move(c1) : std::move(c2);
+    dict = std::move(c2);
   }
 }
 

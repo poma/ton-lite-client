@@ -79,8 +79,9 @@ class AdnlExtClientImpl : public AdnlExtClient {
   void conn_stopped(td::actor::ActorId<AdnlExtConnection> conn) {
     if (!conn_.empty() && conn_.get() == conn) {
       callback_->on_stop_ready();
-      conn_.reset();
+      conn_ = {};
       alarm_timestamp() = next_create_at_;
+      try_stop();
     }
   }
   void conn_ready(td::actor::ActorId<AdnlExtConnection> conn) {
@@ -103,15 +104,16 @@ class AdnlExtClientImpl : public AdnlExtClient {
   }
   void destroy_query(AdnlQueryId id) {
     out_queries_.erase(id);
+    try_stop();
   }
   void answer_query(AdnlQueryId id, td::BufferSlice data) {
     auto it = out_queries_.find(id);
     if (it != out_queries_.end()) {
       td::actor::send_closure(it->second, &AdnlQuery::result, std::move(data));
-      out_queries_.erase(it);
     }
   }
   void alarm() override;
+  void hangup() override;
   AdnlQueryId generate_next_query_id() {
     while (true) {
       AdnlQueryId q_id = AdnlQuery::random_query_id();
@@ -132,6 +134,10 @@ class AdnlExtClientImpl : public AdnlExtClient {
   td::Timestamp next_create_at_ = td::Timestamp::now_cached();
 
   std::map<AdnlQueryId, td::actor::ActorId<AdnlQuery>> out_queries_;
+
+  bool is_closing_{false};
+  td::uint32 ref_cnt_{1};
+  void try_stop();
 };
 
 }  // namespace adnl

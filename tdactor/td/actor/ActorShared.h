@@ -115,5 +115,6 @@ inline ActorShared<> actor_shared() {
   return actor_shared(&core::ActorExecuteContext::get()->actor());
 }
 }  // namespace core
+using core::actor_shared;
 }  // namespace actor
 }  // namespace td
