@@ -2008,10 +2008,10 @@ bool TestNode::get_block_proof(ton::BlockIdExt from, ton::BlockIdExt to, int mod
   }
   if (!(mode & 0x2000)) {
     LOG(INFO) << "got block proof request from " << from.to_str() << " to "
-            << ((mode & 1) ? to.to_str() : "last masterchain block") << " with mode=" << mode;
+              << ((mode & 1) ? to.to_str() : "last masterchain block") << " with mode=" << mode;
   } else {
     LOG(DEBUG) << "got block proof request from " << from.to_str() << " to "
-            << ((mode & 1) ? to.to_str() : "last masterchain block") << " with mode=" << mode;
+               << ((mode & 1) ? to.to_str() : "last masterchain block") << " with mode=" << mode;
   }
   if (!from.is_masterchain_ext()) {
     LOG(ERROR) << "source block " << from.to_str() << " is not a valid masterchain block id";
@@ -2112,6 +2112,11 @@ void TestNode::got_block_proof(ton::BlockIdExt from, ton::BlockIdExt to, int mod
     return;
   }
   auto chain = res.move_as_ok();
+  if (chain->from != from) {
+    LOG(ERROR) << "block proof chain starts from block " << chain->from.to_str() << ", not from requested block "
+               << from.to_str();
+    return;
+  }
   auto err = chain->validate();
   if (err.is_error()) {
     LOG(ERROR) << "block proof chain is invalid: " << err;
