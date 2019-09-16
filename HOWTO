@@ -31,8 +31,17 @@ and
 Ef+BVndbeTJeXWLnQtm5bDC2UVpc0vH2TF2ksZPAPwcODSkb (base64) or
 Ef-BVndbeTJeXWLnQtm5bDC2UVpc0vH2TF2ksZPAPwcODSkb (base64url)
 
-
 in the "user-friendly" form (to be displayed by user-friendly clients). Notice that both forms (base64 and base64url) are valid and must be accepted.
+
+Incidentally, other binary data related to the TON Blockchain have similar "armored" base64 representations, differing by their first bytes. For example, the ubiquitious 256-bit Ed25519 public keys are represented by first creating a 36-byte sequence as follows:
+- one tag byte 0x3E, meaning that this is a public key
+- one tag byte 0xE6, meaning that this is a Ed25519 public key
+- 32 bytes containing the standard binary representation of the Ed25519 public key
+- 2 bytes containing the big-endian representation of CRC16-CCITT of the previous 34 bytes.
+
+The resulting 36-byte sequence is converted into a 48-character base64 or base64url string in the standard fashion. For example, the Ed25519 public key E39ECDA0A7B0C60A7107EC43967829DBE8BC356A49B9DFC6186B3EAC74B5477D (usually represented by a sequence of 32 bytes 0xE3, 0x9E, ..., 0x7D) has the following "armored" representation:
+
+Pubjns2gp7DGCnEH7EOWeCnb6Lw1akm538YYaz6sdLVHfRB2
 
 2. Inspecting the state of a smart contract
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
