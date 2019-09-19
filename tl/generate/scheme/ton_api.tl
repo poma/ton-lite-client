@@ -367,6 +367,8 @@ tonNode.downloadZeroState block:tonNode.blockIdExt = tonNode.Data;
 tonNode.downloadBlockProof block:tonNode.blockIdExt = tonNode.Data;
 tonNode.downloadBlockProofLink block:tonNode.blockIdExt = tonNode.Data;
 
+tonNode.query = Object;
+
 ---types---
 
 // bit 0 - started
