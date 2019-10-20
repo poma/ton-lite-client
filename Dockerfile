@@ -9,8 +9,7 @@ COPY . .
 RUN mkdir build && \
 	cd build && \
 	cmake .. && \
-	cmake --build . --target test-lite-client && \
-	cmake --build . --target fift
+	cmake --build .
 
 FROM ubuntu:16.04
 RUN apt update && \
